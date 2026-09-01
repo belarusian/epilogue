@@ -39,3 +39,6 @@ Two distinct problems in one marker set:
 - Add a short "Status inference" section to the README documenting the exact
   marker set and precedence, so the truthfulness guarantee is backed by a
   documented, user-visible rule.
+
+---
+Status: CLOSED (Cycle 8, PR #11, commit db7a42f)

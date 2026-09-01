@@ -45,3 +45,6 @@ substrings. Options (pick one, keep it deterministic and documented):
 Whichever is chosen, update the module docstring grammar in
 `epilogue/parser.py` (lines 24-58) to state the exact rule, and add the four
 reproduced descriptions as regression tests (see TICKET-027).
+
+---
+Status: CLOSED (Cycle 8, PR #11, commit db7a42f)

@@ -45,3 +45,6 @@ inline logs (no real file):
 - Precedence and case-insensitivity remain as-is.
 These tests should be written to the intended (fixed) behavior so they fail
 before TICKET-024's fix lands and pass after.
+
+---
+Status: CLOSED (Cycle 8, PR #11, commit db7a42f)
