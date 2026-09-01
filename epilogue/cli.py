@@ -19,7 +19,12 @@ Exit-code contract (documented on :func:`main`):
   a clear message is printed to stderr (this holds for BOTH the ``text``
   and ``json`` formats).
 * ``2`` — usage errors (missing/invalid arguments, an invalid cycle range,
-  an invalid ``--status`` value, or a missing log path), raised by argparse.
+  an invalid ``--status`` value, a missing log path, or a log path that is
+  not a regular file, e.g. a directory), raised by argparse.
+* ``3`` — the log exists but could not be read (invalid UTF-8, a permission
+  error, or any other OS-level read failure); a clean one-line message is
+  printed to stderr. (A directory is rejected earlier as a usage error and
+  exits ``2``.)
 
 The module is stdlib-only and fully typed.
 """
@@ -112,8 +117,11 @@ def main(argv: list[str] | None = None) -> int:
         but none has an entry of the requested ``--status`` (a clear message is
         printed to stderr, for both formats); ``2`` for usage errors
         (missing/invalid arguments, an invalid cycle range, an invalid
-        ``--format`` value, an invalid ``--status`` value, or a missing log
-        path), raised by argparse.
+        ``--format`` value, an invalid ``--status`` value, a missing log path,
+        or a log path that is not a regular file, e.g. a directory),
+        raised by argparse; ``3`` when the log exists but could not be
+        read (invalid UTF-8, a permission error, or any other OS-level
+        read failure), with a clean one-line message printed to stderr.
     """
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -126,8 +134,14 @@ def main(argv: list[str] | None = None) -> int:
 
     if not args.log.exists():
         parser.error(f"log path does not exist: {args.log}")
+    elif not args.log.is_file():
+        parser.error(f"log path is not a regular file: {args.log}")
 
-    text = args.log.read_text(encoding="utf-8")
+    try:
+        text = args.log.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError) as exc:
+        print(f"epilogue: could not read log {args.log}: {exc}", file=sys.stderr)
+        return 3
     cycles = parse_log(text)
     selected = [c for c in cycles if args.from_cycle <= c.number <= args.to_cycle]
 

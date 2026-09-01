@@ -10,6 +10,7 @@ ground-truth log file is read.
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 import pytest
@@ -657,3 +658,85 @@ def test_range_filter_matches_every_in_range_number_for_duplicate_log(
     assert "## Cycle 2: B" in out
     assert "x" in out
     assert "y" in out
+
+
+def test_log_directory_is_usage_error(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """A ``--log`` path that is a directory is a usage error (exit 2, no traceback)."""
+    directory = tmp_path / "logs"
+    directory.mkdir()
+    with pytest.raises(SystemExit) as excinfo:
+        main(
+            [
+                "--project",
+                "demo",
+                "--from",
+                "1",
+                "--to",
+                "2",
+                "--log",
+                str(directory),
+            ]
+        )
+    assert excinfo.value.code == 2
+    err = capsys.readouterr().err
+    assert "not a regular file" in err
+    assert "Traceback" not in err
+
+
+def test_invalid_utf8_log_returns_three(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """A ``--log`` file with invalid UTF-8 bytes returns 3 with a clean message."""
+    log = tmp_path / "bad.md"
+    with open(log, "wb") as fh:
+        fh.write(b"## Cycle 1: x\n- caf\xe9\n")
+    code = main(
+        [
+            "--project",
+            "demo",
+            "--from",
+            "1",
+            "--to",
+            "2",
+            "--log",
+            str(log),
+        ]
+    )
+    assert code == 3
+    captured = capsys.readouterr()
+    assert "could not read log" in captured.err
+    assert "Traceback" not in captured.err
+
+
+@pytest.mark.skipif(os.geteuid() == 0, reason="root bypasses mode 000")
+def test_unreadable_log_returns_three(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """A ``--log`` file with mode 000 returns 3 with a clean message."""
+    log = tmp_path / "noperm.md"
+    log.write_text("## Cycle 1: x\n- something\n", encoding="utf-8")
+    os.chmod(log, 0o000)
+    try:
+        code = main(
+            [
+                "--project",
+                "demo",
+                "--from",
+                "1",
+                "--to",
+                "2",
+                "--log",
+                str(log),
+            ]
+        )
+    finally:
+        os.chmod(log, 0o600)
+    assert code == 3
+    captured = capsys.readouterr()
+    assert "could not read log" in captured.err
+    assert "Traceback" not in captured.err

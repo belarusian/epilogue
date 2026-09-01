@@ -54,8 +54,11 @@ Arguments:
   human-readable changelog) or `json` (a machine-readable document).
 
 Exit codes: `0` on a successful render (changelog on stdout); `2` for usage
-errors (missing/invalid args, invalid range, missing log); `1` when no cycles
-fall within the requested range (a clear message is printed to stderr).
+errors (missing/invalid args, invalid range, a missing log, or a log path that
+is not a regular file, e.g. a directory); `1` when no cycles fall within the
+requested range (a clear message is printed to stderr); `3` when the log exists
+but could not be read (invalid UTF-8, a permission error, or any other OS-level
+read failure; a clean one-line message is printed to stderr).
 
 ## Example
 
@@ -234,7 +237,10 @@ Exit codes: `0` when at least one cycle with a matching entry is rendered;
 `1` when no cycles fall in the range, or when cycles fall in the range but
 none of them has an entry of the requested status (a clear message is
 printed to stderr, for both formats); `2` for usage errors (including an
-invalid `--status` value).
+invalid `--status` value, a missing log, or a log path that is not a regular
+file, e.g. a directory); `3` when the log exists but could not be read
+(invalid UTF-8, a permission error, or any other OS-level read failure; a
+clean one-line message is printed to stderr).
 
 ## Machine-readable output
 
