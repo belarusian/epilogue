@@ -137,7 +137,9 @@ exactly what the parser honors.
   token, so `abandoned-cart` is a single token and `no-op` is a single token.
 * A **marker** is a phrase (a tuple of tokens). A marker matches only when its
   tokens occur as a **contiguous run** in the description's token list, in
-  order, with no other tokens between them. Matching is case-insensitive.
+  order, with no other tokens between them — with one documented exception:
+  the `not merged` phrase tolerates a *bounded gap* of up to two intervening
+  tokens (see the next bullet). Matching is case-insensitive.
 * The marker phrases are:
 
   * `not_merged`: `not merged`, `not-merged`, `reverted`, `reverting`,
@@ -148,6 +150,15 @@ exactly what the parser honors.
   Common morphological variants (verb forms `reverting`/`reverts`,
   `abandoning`/`abandons`; plurals `no-ops`, `no changes`; and the hyphenated
   compound `not-merged`) are recognized alongside the base forms.
+
+* **The `not merged` phrase allows a bounded gap.** Natural phrasings of
+  "wasn't merged" insert a word between `not` and `merged` (`yet`, `been`),
+  so a strict contiguous run would miss them. For this phrase only, the two
+  tokens may be separated by up to two intervening tokens and still match.
+  So `not yet merged` and `not been merged` classify as `not_merged`. A gap of
+  three or more intervening tokens does **not** match: `not a b c merged`
+  (three intervening tokens) defaults to `merged`. Every other marker still
+  requires a contiguous run.
 
 * Precedence is `not_merged` > `no_op` > `merged` (default).
 
