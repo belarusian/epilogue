@@ -819,3 +819,36 @@ def test_unreadable_log_returns_three(
     captured = capsys.readouterr()
     assert "could not read log" in captured.err
     assert "Traceback" not in captured.err
+
+
+def test_readme_does_not_claim_project_key_omitted_when_project_not_given() -> None:
+    """TICKET-053: the README must not claim the JSON `project` key is omitted
+    "when `--project` is not given". `--project` is a *required* CLI argument,
+    so that branch is unreachable through the CLI; the `project=None` omission
+    only exists in the library `render`/`render_json`. This reproduces the
+    defect (fails before the doc fix because the false sentence is present)
+    and pins it (passes after)."""
+    from pathlib import Path
+
+    # 1. The CLI makes --project required, so "not given" is impossible:
+    #    omitting it is a usage error (exit 2) naming --project as required.
+    with pytest.raises(SystemExit) as excinfo:
+        main(["--from", "1", "--to", "1", "--log", "does-not-matter.md"])
+    assert excinfo.value.code == 2
+
+    # 2. The README must not document the unreachable "omitted when --project
+    #    is not given" behavior.
+    repo_root = Path(__file__).resolve().parent.parent
+    readme_text = (repo_root / "README.md").read_text(encoding="utf-8")
+
+    # The false claim (pre-fix) is that the project key is omitted when
+    # --project is not given. After the fix this sentence must be gone.
+    assert "omitted entirely when `--project` is not given" not in readme_text, (
+        "README.md still claims the `project` key is omitted when `--project` "
+        "is not given, but --project is required so that branch is unreachable "
+        "via the CLI"
+    )
+    # The README must still document that --project is required.
+    assert "`--project` (str, required)" in readme_text, (
+        "README.md must document --project as a required argument"
+    )
