@@ -168,5 +168,11 @@ def main(argv: list[str] | None = None) -> int:
         out = render_json(selected, project=args.project)
     else:
         out = render(selected, project=args.project)
-    print(out)
+    # Normalize the trailing newline so BOTH documented formats end with
+    # exactly one trailing newline (TICKET-054). render() already ends in a
+    # newline (and, for non-empty input, a trailing blank line, i.e. two
+    # newlines); render_json() ends in none. Rather than change the
+    # render()/render_json() library contract, strip any trailing newlines
+    # here and append exactly one, so text and json are byte-consistent.
+    sys.stdout.write(out.rstrip("\n") + "\n")
     return 0
