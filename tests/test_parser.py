@@ -467,3 +467,35 @@ def test_bounded_gap_run_helper_contract() -> None:
     # Exactly max_gap intervening tokens matches; max_gap + 1 does not.
     assert _has_bounded_gap_run(["not", "a", "b", "merged"], ("not", "merged"), 2) is True
     assert _has_bounded_gap_run(["not", "a", "b", "c", "merged"], ("not", "merged"), 2) is False
+
+
+def test_status_hyphenated_not_yet_merged_recognized() -> None:
+    """TICKET-045: the compact hyphenated form 'not-yet-merged' is a single
+    token and must classify NOT_MERGED (it fell through to MERGED before)."""
+    log = "## Cycle 1: H\n- not-yet-merged\n"
+    cycles = parse_log(log)
+    assert cycles[0].entries[0].status is MergeStatus.NOT_MERGED
+
+
+def test_status_hyphenated_not_merged_yet_recognized() -> None:
+    """TICKET-045: the compact hyphenated form 'not-merged-yet' is a single
+    token and must classify NOT_MERGED (it fell through to MERGED before)."""
+    log = "## Cycle 1: H\n- not-merged-yet\n"
+    cycles = parse_log(log)
+    assert cycles[0].entries[0].status is MergeStatus.NOT_MERGED
+
+
+def test_status_hyphenated_not_merged_space_form_regression() -> None:
+    """TICKET-045 regression guard: the space form 'not yet merged' (TICKET-038)
+    and the plain 'merged' line must keep their statuses after adding the
+    hyphenated markers (no over-match)."""
+    log = (
+        "## Cycle 1: H\n"
+        "- not yet merged\n"
+        "- merged\n"
+    )
+    cycles = parse_log(log)
+    assert [e.status for e in cycles[0].entries] == [
+        MergeStatus.NOT_MERGED,
+        MergeStatus.MERGED,
+    ]

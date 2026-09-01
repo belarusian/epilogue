@@ -133,6 +133,8 @@ _TOKEN_RE = re.compile(r"[a-z0-9-]+")
 _NOT_MERGED_MARKERS: tuple[tuple[str, ...], ...] = (
     ("not", "merged"),
     ("not-merged",),
+    ("not-yet-merged",),
+    ("not-merged-yet",),
     ("reverted",),
     ("reverting",),
     ("reverts",),
