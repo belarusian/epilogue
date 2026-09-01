@@ -10,7 +10,8 @@ requires-python = ">=3.10"
 # Bootstrap cycle: stdlib only. No runtime dependencies.
 dependencies = []
 
-# No console-script entry point yet — the CLI is a later build cycle.
+[project.scripts]
+epilogue = "epilogue.cli:main"
 
 [tool.setuptools]
 packages = ["epilogue"]
