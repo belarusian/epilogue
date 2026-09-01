@@ -10,7 +10,7 @@ Built cycle-by-cycle; see the ground-truth log: `../ai/cycle-001-epilogue-gate.m
 ## Structure
 
     epilogue/
-      __init__.py    # public API re-exports (Cycle, Entry, MergeStatus, parse_log, render, __version__)
+      __init__.py    # public API re-exports (Cycle, Entry, MergeStatus, parse_log, filter_by_status, render, render_json, __version__)
       model.py       # stdlib data model: MergeStatus enum + Entry/Cycle dataclasses
       parser.py      # parse a raw cycle log into list[Cycle] (pure, stdlib-only)
       render.py      # render list[Cycle] into changelog text (pure, stdlib-only)
