@@ -66,7 +66,9 @@ description using **token-based** matching, not free substring matching.
     marker must appear with its exact ASCII spelling.
 * A **marker** is a tuple of tokens (a phrase). A marker matches only when
   its tokens occur as a **contiguous run** in the description's token list
-  (in order, with no other tokens between them).
+  (in order, with no other tokens between them) — with one documented
+  exception: the ``("not", "merged")`` phrase tolerates a *bounded gap* of
+  up to two intervening tokens (see the next bullet).
 * The marker sets (as token tuples) are:
 
   * ``NOT_MERGED``: ``("not", "merged")``, ``("not-merged",)``,
@@ -82,6 +84,16 @@ description using **token-based** matching, not free substring matching.
   glued to a hyphen or digit on either side (``"no-op-"``, ``"-no-op"``,
   ``"no--op"``, ``"no-op2"``, ``"reverted2"``) is one token that equals
   none of the markers and therefore defaults to ``MERGED``.
+
+* **The ``("not", "merged")`` phrase allows a bounded gap.** Natural phrasings
+  of "wasn't merged" insert a word between ``not`` and ``merged`` (``yet``,
+  ``been``), so a strict contiguous run would miss them. For this phrase only,
+  the two tokens may be separated by up to ``_NOT_MERGED_PHRASE_MAX_GAP``
+  (two) intervening tokens and still match. So ``"not yet merged"`` and
+  ``"not been merged"`` classify as ``NOT_MERGED``. A gap of three or more
+  intervening tokens does **not** match: ``"not a b c merged"`` (three
+  intervening tokens) defaults to ``MERGED``. Every other marker still
+  requires a contiguous run.
 
 * Precedence is ``NOT_MERGED`` > ``NO_OP`` > ``MERGED`` (default). The
   ``MERGED`` status is the deterministic default when no ``NOT_MERGED`` or
@@ -136,6 +148,15 @@ _NO_OP_MARKERS: tuple[tuple[str, ...], ...] = (
     ("no", "changes"),
 )
 
+# The ("not", "merged") phrase is the single marker that tolerates
+# intervening words: natural phrasings such as "not yet merged" and "not been
+# merged" insert a word between "not" and "merged" but still mean "wasn't
+# merged". We allow up to _NOT_MERGED_PHRASE_MAX_GAP intervening tokens
+# between the two phrase tokens; a larger gap (e.g. "not a b c merged", three
+# intervening tokens) does not match. Documented in the module docstring.
+_NOT_MERGED_PHRASE: tuple[str, ...] = ("not", "merged")
+_NOT_MERGED_PHRASE_MAX_GAP: int = 2
+
 
 def _strip_bullet(line: str) -> str:
     """Return the line with a leading bullet marker (``- `` / ``* ``) removed.
@@ -174,16 +195,59 @@ def _has_contiguous_run(tokens: list[str], marker: tuple[str, ...]) -> bool:
     return False
 
 
+def _has_bounded_gap_run(
+    tokens: list[str], marker: tuple[str, ...], max_gap: int
+) -> bool:
+    """Return True if ``marker`` occurs in ``tokens`` in order with at most
+    ``max_gap`` intervening tokens between consecutive marker tokens.
+
+    For ``max_gap == 0`` this is identical to :func:`_has_contiguous_run`.
+    A marker longer than the token list can never match.
+    """
+    marker_len = len(marker)
+    if marker_len == 0 or marker_len > len(tokens):
+        return False
+    if max_gap == 0:
+        return _has_contiguous_run(tokens, marker)
+
+    # reachable holds the set of token indices at which the marker can be
+    # matched up to the current marker position (the last matched token sits
+    # at that index). We keep the full set rather than just the minimum
+    # index, because a later occurrence of a marker token can be closer to
+    # the next marker token than an earlier one (so the minimum alone is not
+    # sufficient to decide reachability).
+    reachable: set[int] = {i for i, tok in enumerate(tokens) if tok == marker[0]}
+    for pos in range(1, marker_len):
+        next_reachable: set[int] = set()
+        for j, tok in enumerate(tokens):
+            if tok != marker[pos]:
+                continue
+            # marker[pos] at j is valid if some earlier match of marker[pos-1]
+            # sits within max_gap intervening tokens: i in [j-max_gap-1, j-1].
+            if any(j - max_gap - 1 <= i <= j - 1 for i in reachable):
+                next_reachable.add(j)
+        if not next_reachable:
+            return False
+        reachable = next_reachable
+    return bool(reachable)
+
+
 def _infer_status(description: str) -> MergeStatus:
     """Infer the truthful :class:`MergeStatus` from a description.
 
-    Uses token-based, contiguous-run matching against the documented marker
-    sets with precedence ``NOT_MERGED`` > ``NO_OP`` > ``MERGED``. A marker
-    word embedded inside a larger hyphenated token does not trigger.
+    Uses token-based matching against the documented marker sets with
+    precedence ``NOT_MERGED`` > ``NO_OP`` > ``MERGED``. Every marker requires
+    a contiguous run except the ``("not", "merged")`` phrase, which tolerates
+    a bounded gap of up to ``_NOT_MERGED_PHRASE_MAX_GAP`` intervening tokens
+    (so "not yet merged" / "not been merged" match). A marker word embedded
+    inside a larger hyphenated token does not trigger.
     """
     tokens = _tokenize(description)
     for marker in _NOT_MERGED_MARKERS:
-        if _has_contiguous_run(tokens, marker):
+        if marker == _NOT_MERGED_PHRASE:
+            if _has_bounded_gap_run(tokens, marker, _NOT_MERGED_PHRASE_MAX_GAP):
+                return MergeStatus.NOT_MERGED
+        elif _has_contiguous_run(tokens, marker):
             return MergeStatus.NOT_MERGED
     for marker in _NO_OP_MARKERS:
         if _has_contiguous_run(tokens, marker):

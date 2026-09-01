@@ -368,3 +368,102 @@ def test_status_non_ascii_dropped_not_folded() -> None:
     assert _infer_status("revertedé") is MergeStatus.NOT_MERGED
     assert _infer_status("no-opé") is MergeStatus.NO_OP
     assert _infer_status("abandoné") is MergeStatus.MERGED
+
+
+# ---------------------------------------------------------------------------
+# Bounded-gap rule for the ("not", "merged") phrase (TICKET-038, contract A)
+# ---------------------------------------------------------------------------
+
+
+def test_status_not_merged_phrase_with_intervening_word() -> None:
+    """TICKET-038: a single intervening word between 'not' and 'merged' still
+    matches the NOT_MERGED phrase (bounded gap of up to two tokens).
+
+    'not yet merged' and 'not been merged' are the most natural ways to write
+    "wasn't merged"; both must classify NOT_MERGED (they fell through to
+    MERGED under the strict contiguous-run rule).
+    """
+    log = (
+        "## Cycle 1: G\n"
+        "- not yet merged\n"
+        "- not been merged\n"
+    )
+    cycles = parse_log(log)
+    assert [e.status for e in cycles[0].entries] == [
+        MergeStatus.NOT_MERGED,
+        MergeStatus.NOT_MERGED,
+    ]
+
+
+def test_status_not_merged_phrase_with_leading_word_and_intervening_word() -> None:
+    """TICKET-038: words before the phrase and one intervening word are fine.
+
+    'has not been merged' -> ['has','not','been','merged']; 'not' and 'merged'
+    have one intervening token ('been'), so it matches NOT_MERGED.
+    """
+    log = "## Cycle 1: G\n- has not been merged\n"
+    cycles = parse_log(log)
+    assert cycles[0].entries == [
+        Entry(description="has not been merged", status=MergeStatus.NOT_MERGED)
+    ]
+
+
+def test_status_not_merged_phrase_with_two_intervening_words() -> None:
+    """TICKET-038: two intervening words is the maximum allowed gap.
+
+    'not yet been merged' -> ['not','yet','been','merged']; 'not' and 'merged'
+    have two intervening tokens, which is exactly _NOT_MERGED_PHRASE_MAX_GAP,
+    so it still matches NOT_MERGED.
+    """
+    log = "## Cycle 1: G\n- not yet been merged\n"
+    cycles = parse_log(log)
+    assert cycles[0].entries == [
+        Entry(description="not yet been merged", status=MergeStatus.NOT_MERGED)
+    ]
+
+
+def test_status_not_merged_phrase_large_gap_defaults_merged() -> None:
+    """TICKET-038 regression guard: a gap of 3+ intervening tokens does NOT
+    match the phrase, so the entry defaults to MERGED.
+
+    'not a b c merged' -> ['not','a','b','c','merged']; 'not' and 'merged'
+    have three intervening tokens (a, b, c), which exceeds the max gap of two,
+    so the phrase does not match and the entry is MERGED.
+    """
+    log = "## Cycle 1: G\n- not a b c merged\n"
+    cycles = parse_log(log)
+    assert cycles[0].entries == [
+        Entry(description="not a b c merged", status=MergeStatus.MERGED)
+    ]
+
+
+def test_bounded_gap_run_helper_contract() -> None:
+    """TICKET-038: pin the _has_bounded_gap_run helper's contract directly.
+
+    - max_gap == 0 is identical to _has_contiguous_run.
+    - a marker longer than the token list never matches.
+    - a gap of exactly max_gap intervening tokens matches; max_gap + 1 does not.
+    """
+    from epilogue.parser import (
+        _has_bounded_gap_run,
+        _has_contiguous_run,
+    )
+
+    # max_gap == 0 is identical to the contiguous-run helper.
+    for tokens in (
+        ["not", "merged"],
+        ["not", "yet", "merged"],
+        ["not", "a", "b", "c", "merged"],
+        ["merged", "not"],
+    ):
+        assert _has_bounded_gap_run(tokens, ("not", "merged"), 0) == (
+            _has_contiguous_run(tokens, ("not", "merged"))
+        ), tokens
+
+    # A marker longer than the token list never matches.
+    assert _has_bounded_gap_run(["not"], ("not", "merged"), 2) is False
+    assert _has_bounded_gap_run([], ("not", "merged"), 2) is False
+
+    # Exactly max_gap intervening tokens matches; max_gap + 1 does not.
+    assert _has_bounded_gap_run(["not", "a", "b", "merged"], ("not", "merged"), 2) is True
+    assert _has_bounded_gap_run(["not", "a", "b", "c", "merged"], ("not", "merged"), 2) is False

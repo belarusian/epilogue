@@ -1,5 +1,7 @@
 # TICKET-038: Contiguous-run rule rejects natural phrasings with intervening words ("not yet merged")
 
+**Status: CLOSED (Cycle 12, contract A).** FIXED: the `("not","merged")` phrase now tolerates a *bounded gap* of up to two intervening tokens, so natural phrasings `not yet merged` / `not been merged` classify `not_merged`, while a gap of 3+ intervening tokens (e.g. `not a b c merged`) still defaults to `merged`. Implemented via `_NOT_MERGED_PHRASE` / `_NOT_MERGED_PHRASE_MAX_GAP` and `_has_bounded_gap_run` in `epilogue/parser.py` (used only for the `("not","merged")` marker; every other marker keeps the strict contiguous-run rule). See parser docstring + README 'Status inference'; pinned by tests/test_parser.py::test_status_not_merged_phrase_with_intervening_word, ::test_status_not_merged_phrase_with_leading_word_and_intervening_word, ::test_status_not_merged_phrase_with_two_intervening_words, ::test_status_not_merged_phrase_large_gap_defaults_merged, ::test_bounded_gap_run_helper_contract. (PR pending — not yet opened per task constraints.)
+
 ## Title
 The `not merged` marker requires its two tokens to be ADJACENT (a contiguous
 run with no other tokens between them). Natural phrasings that insert a word
