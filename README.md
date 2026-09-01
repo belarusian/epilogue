@@ -10,14 +10,18 @@ Built cycle-by-cycle; see the ground-truth log: `../ai/cycle-001-epilogue-gate.m
 ## Structure
 
     epilogue/
-      __init__.py    # public API re-exports (Cycle, Entry, MergeStatus, __version__)
+      __init__.py    # public API re-exports (Cycle, Entry, MergeStatus, parse_log, render, __version__)
       model.py       # stdlib data model: MergeStatus enum + Entry/Cycle dataclasses
-      cli.py         # argparse CLI shell: main(argv) -> int (validation + pending path)
+      parser.py      # parse a raw cycle log into list[Cycle] (pure, stdlib-only)
+      render.py      # render list[Cycle] into changelog text (pure, stdlib-only)
+      cli.py         # argparse CLI: main(argv) -> int (validation + parse-to-render)
       __main__.py    # `python -m epilogue` entry point -> sys.exit(main())
     tests/
       test_model.py  # data-model tests
+      test_parser.py # parser tests
+      test_render.py # renderer tests
       test_package.py# importability / public-API tests
-      test_cli.py    # CLI shell tests (help, errors, pending path)
+      test_cli.py    # CLI tests (help, errors, success, no-cycles-in-range)
     pyproject.toml   # stdlib-only packaging + [project.scripts] epilogue
 
 ## The gate
@@ -33,10 +37,9 @@ stay green:
 
 ## Usage
 
-The CLI shell is wired up and validated, but the core parse-to-render
-capability is still pending (a later Build phase). Running it with valid
-arguments prints a clear "core capability pending (Build phase)" message to
-stderr and exits with a distinct code `3`:
+The CLI runs the real parse-to-render pipeline: it reads the cycle log,
+parses it into cycles, filters to the requested `--from`/`--to` range, renders
+the changelog, and prints it to stdout:
 
     epilogue --project <name> --from <n> --to <m> --log <path>
     python -m epilogue --project <name> --from <n> --to <m> --log <path>
@@ -48,6 +51,6 @@ Arguments:
 - `--to` (int, required) — last cycle number (inclusive); must be `>= --from`.
 - `--log` (path, required) — path to the cycle log file; must exist.
 
-Exit codes: `0` for `--help`; `2` for usage errors (missing/invalid args,
-invalid range, missing log); `3` for the pending-capability path (distinct from
-usage errors, and also reported on stderr).
+Exit codes: `0` on a successful render (changelog on stdout); `2` for usage
+errors (missing/invalid args, invalid range, missing log); `1` when no cycles
+fall within the requested range (a clear message is printed to stderr).
