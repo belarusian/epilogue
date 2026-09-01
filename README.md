@@ -41,8 +41,8 @@ The CLI runs the real parse-to-render pipeline: it reads the cycle log,
 parses it into cycles, filters to the requested `--from`/`--to` range, renders
 the changelog, and prints it to stdout:
 
-    epilogue --project <name> --from <n> --to <m> --log <path> [--format {text,json}]
-    python -m epilogue --project <name> --from <n> --to <m> --log <path> [--format {text,json}]
+    epilogue --project <name> --from <n> --to <m> --log <path> [--format {text,json}] [--status {merged,no_op,not_merged}]
+    python -m epilogue --project <name> --from <n> --to <m> --log <path> [--format {text,json}] [--status {merged,no_op,not_merged}]
 
 Arguments:
 
@@ -52,6 +52,9 @@ Arguments:
 - `--log` (path, required) — path to the cycle log file; must exist.
 - `--format` (str, optional) — output format: `text` (the default, the
   human-readable changelog) or `json` (a machine-readable document).
+- `--status` (str, optional) — status selector: render only entries with this
+  `MergeStatus` (`merged`, `no_op`, or `not_merged`). When omitted (the
+  default), all entries are rendered. See "## Status filter".
 
 Exit codes: `0` on a successful render (changelog on stdout); `2` for usage
 errors (missing/invalid args, invalid range, a missing log, or a log path that

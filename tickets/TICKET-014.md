@@ -41,4 +41,4 @@ Define the seam explicitly (do not implement the full pipeline in this ticket):
   once they exist, so the CLI and tests share one surface.
 
 ---
-Status: OPEN (Cycle 3 audit)
+Status: SUPERSEDED (Cycle 26) — the described defect (CLI never wires the parser; main() hardcodes the pending path and never reads the log) was fixed in Cycles 4-5: epilogue/cli.py main() today reads the log (args.log.read_text, guarded since Cycle 20) and wires parse_log -> render/render_json. Historical ticket whose status line was never updated when the work landed; closed as bookkeeping, not re-implemented.
