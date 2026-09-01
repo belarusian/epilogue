@@ -413,3 +413,213 @@ def test_default_format_is_text_backward_compatible(
     # It must NOT be parseable as a JSON document (the text shape is not JSON).
     with pytest.raises(ValueError):
         json.loads(out)
+
+
+# ---------------------------------------------------------------------------
+# --status tests (TICKET-029)
+# ---------------------------------------------------------------------------
+
+
+def _status_log(tmp_path: Path) -> Path:
+    """A small log covering all three statuses across two cycles."""
+    log = tmp_path / "log.md"
+    log.write_text(
+        "## Cycle 1: Bootstrap\n"
+        "- added the data model\n"
+        "- a no-op: nothing changed\n"
+        "- this one was reverted\n"
+        "## Cycle 2: Build\n"
+        "- shipped the CLI shell\n"
+        "- abandoned the renderer\n",
+        encoding="utf-8",
+    )
+    return log
+
+
+def test_status_not_merged_renders_only_not_merged_text(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """--status not_merged renders only not_merged entries (text), exit 0."""
+    log = _status_log(tmp_path)
+    code = main(
+        [
+            "--project", "demo",
+            "--from", "1", "--to", "2",
+            "--log", str(log),
+            "--status", "not_merged",
+        ]
+    )
+    assert code == 0
+    out = capsys.readouterr().out
+    # Only the not_merged entries appear; the merged/no_op ones do not.
+    assert "this one was reverted" in out
+    assert "abandoned the renderer" in out
+    assert "added the data model" not in out
+    assert "a no-op: nothing changed" not in out
+    assert "shipped the CLI shell" not in out
+    # Only the Not Merged sub-section header is present.
+    assert "### Not Merged" in out
+    assert "### Merged" not in out
+    assert "### No-ops" not in out
+
+
+def test_status_no_op_json_emits_only_no_op_token(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """--status no_op with json emits only no_op entries with the 'no_op' token."""
+    log = _status_log(tmp_path)
+    code = main(
+        [
+            "--project", "demo",
+            "--from", "1", "--to", "2",
+            "--log", str(log),
+            "--format", "json",
+            "--status", "no_op",
+        ]
+    )
+    assert code == 0
+    out = capsys.readouterr().out
+    doc = json.loads(out)
+    # Only cycle 1 has a no_op; cycle 2 is dropped.
+    assert [c["number"] for c in doc["cycles"]] == [1]
+    assert doc["cycles"][0]["entries"] == [
+        {"description": "a no-op: nothing changed", "status": "no_op"},
+    ]
+    statuses = [e["status"] for c in doc["cycles"] for e in c["entries"]]
+    assert statuses == ["no_op"]
+
+
+def test_status_merged_no_matching_entries_exit_one(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """In-range cycles with NO merged entries -> exit 1 + stderr (stdout empty)."""
+    log = tmp_path / "log.md"
+    log.write_text(
+        "## Cycle 1: Only NoOps\n"
+        "- a no-op: nothing changed\n"
+        "- another no change\n",
+        encoding="utf-8",
+    )
+    code = main(
+        [
+            "--project", "demo",
+            "--from", "1", "--to", "1",
+            "--log", str(log),
+            "--status", "merged",
+        ]
+    )
+    assert code == 1
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert "no entry with status 'merged'" in captured.err
+    assert "1..1" in captured.err
+
+
+def test_status_merged_no_matching_entries_json_stdout_empty(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """The no-matching-status path also yields empty stdout for json."""
+    log = tmp_path / "log.md"
+    log.write_text(
+        "## Cycle 1: Only NoOps\n"
+        "- a no-op: nothing changed\n",
+        encoding="utf-8",
+    )
+    code = main(
+        [
+            "--project", "demo",
+            "--from", "1", "--to", "1",
+            "--log", str(log),
+            "--format", "json",
+            "--status", "merged",
+        ]
+    )
+    assert code == 1
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert "no entry with status 'merged'" in captured.err
+
+
+def test_status_invalid_value_is_usage_error(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """An invalid --status value is a usage error (exit 2 via argparse)."""
+    log = _status_log(tmp_path)
+    with pytest.raises(SystemExit) as excinfo:
+        main(
+            [
+                "--project", "demo",
+                "--from", "1", "--to", "2",
+                "--log", str(log),
+                "--status", "bogus",
+            ]
+        )
+    assert excinfo.value.code == 2
+    err = capsys.readouterr().err
+    assert "invalid choice" in err
+
+
+def test_status_combined_with_range(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Range AND status both apply: only in-range cycles, only matching entries."""
+    log = tmp_path / "log.md"
+    log.write_text(
+        "## Cycle 1: A\n"
+        "- reverted in one\n"
+        "- merged in one\n"
+        "## Cycle 2: B\n"
+        "- reverted in two\n"
+        "## Cycle 3: C\n"
+        "- reverted in three\n",
+        encoding="utf-8",
+    )
+    code = main(
+        [
+            "--project", "demo",
+            "--from", "1", "--to", "2",
+            "--log", str(log),
+            "--status", "not_merged",
+        ]
+    )
+    assert code == 0
+    out = capsys.readouterr().out
+    # Cycle 3 is out of range and must not appear.
+    assert "## Cycle 3: C" not in out
+    assert "reverted in three" not in out
+    # Within the range, only the not_merged entries appear.
+    assert "reverted in one" in out
+    assert "reverted in two" in out
+    assert "merged in one" not in out
+
+
+def test_default_no_status_is_backward_compatible(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Omitting --status renders all entries (backward compatible)."""
+    log = _status_log(tmp_path)
+    code = main(
+        [
+            "--project", "demo",
+            "--from", "1", "--to", "2",
+            "--log", str(log),
+        ]
+    )
+    assert code == 0
+    out = capsys.readouterr().out
+    # All three statuses are rendered.
+    assert "### Merged" in out
+    assert "### No-ops" in out
+    assert "### Not Merged" in out
+    assert "added the data model" in out
+    assert "a no-op: nothing changed" in out
+    assert "this one was reverted" in out
+    assert "shipped the CLI shell" in out
+    assert "abandoned the renderer" in out

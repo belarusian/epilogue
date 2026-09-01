@@ -12,7 +12,7 @@ from __future__ import annotations
 import json
 
 from epilogue.model import Cycle, Entry, MergeStatus
-from epilogue.render import render, render_json
+from epilogue.render import filter_by_status, render, render_json
 
 
 def _cycle_block(text: str, number: int) -> list[str]:
@@ -263,3 +263,143 @@ def test_render_json_returns_str_and_is_pure() -> None:
     # Mutating the input afterwards does not affect an already-built string.
     cycles.append(Cycle(number=9, title="Late", entries=[]))
     assert first == second
+
+
+# ---------------------------------------------------------------------------
+# filter_by_status tests (TICKET-029)
+# ---------------------------------------------------------------------------
+
+
+def _filter_fixture() -> list[Cycle]:
+    """Two cycles whose combined entries cover all three statuses.
+
+    Cycle 1 has all three statuses; cycle 2 has only merged + not_merged
+    (no no_op), so filtering by no_op must drop cycle 2 entirely.
+    """
+    return [
+        Cycle(
+            number=1,
+            title="Bootstrap",
+            entries=[
+                Entry(description="added the data model", status=MergeStatus.MERGED),
+                Entry(description="a no-op: nothing changed", status=MergeStatus.NO_OP),
+                Entry(description="this one was reverted", status=MergeStatus.NOT_MERGED),
+                Entry(description="wired up the package", status=MergeStatus.MERGED),
+            ],
+        ),
+        Cycle(
+            number=2,
+            title="Build",
+            entries=[
+                Entry(description="shipped the CLI shell", status=MergeStatus.MERGED),
+                Entry(description="abandoned the renderer", status=MergeStatus.NOT_MERGED),
+            ],
+        ),
+    ]
+
+
+def test_filter_by_status_each_status_returns_only_matching_entries() -> None:
+    """Filtering by each status keeps only matching entries, in order."""
+    cycles = _filter_fixture()
+
+    merged = filter_by_status(cycles, MergeStatus.MERGED)
+    assert [c.number for c in merged] == [1, 2]
+    assert [e.description for e in merged[0].entries] == [
+        "added the data model",
+        "wired up the package",
+    ]
+    assert [e.description for e in merged[1].entries] == ["shipped the CLI shell"]
+    assert all(e.status is MergeStatus.MERGED for c in merged for e in c.entries)
+
+    no_op = filter_by_status(cycles, MergeStatus.NO_OP)
+    # Only cycle 1 has a no_op; cycle 2 is dropped.
+    assert [c.number for c in no_op] == [1]
+    assert [e.description for e in no_op[0].entries] == ["a no-op: nothing changed"]
+    assert all(e.status is MergeStatus.NO_OP for c in no_op for e in c.entries)
+
+    not_merged = filter_by_status(cycles, MergeStatus.NOT_MERGED)
+    assert [c.number for c in not_merged] == [1, 2]
+    assert [e.description for e in not_merged[0].entries] == ["this one was reverted"]
+    assert [e.description for e in not_merged[1].entries] == ["abandoned the renderer"]
+    assert all(e.status is MergeStatus.NOT_MERGED for c in not_merged for e in c.entries)
+
+
+def test_filter_by_status_drops_cycles_with_no_matching_entry() -> None:
+    """A cycle with zero matching entries is dropped entirely."""
+    cycles = [
+        Cycle(
+            number=1,
+            title="Only Merged",
+            entries=[Entry(description="m", status=MergeStatus.MERGED)],
+        ),
+        Cycle(number=2, title="Empty", entries=[]),
+    ]
+    result = filter_by_status(cycles, MergeStatus.NOT_MERGED)
+    assert result == []
+    # Even the empty cycle is dropped (it has no matching entry).
+    result_merged = filter_by_status(cycles, MergeStatus.MERGED)
+    assert [c.number for c in result_merged] == [1]
+
+
+def test_filter_by_status_preserves_cycle_and_entry_order() -> None:
+    """Cycle order and, within a cycle, entry order are preserved verbatim."""
+    cycles = [
+        Cycle(
+            number=3,
+            title="C",
+            entries=[
+                Entry(description="z", status=MergeStatus.MERGED),
+                Entry(description="y", status=MergeStatus.MERGED),
+                Entry(description="x", status=MergeStatus.MERGED),
+            ],
+        ),
+        Cycle(
+            number=1,
+            title="A",
+            entries=[Entry(description="a", status=MergeStatus.MERGED)],
+        ),
+    ]
+    result = filter_by_status(cycles, MergeStatus.MERGED)
+    assert [c.number for c in result] == [3, 1]
+    assert [e.description for e in result[0].entries] == ["z", "y", "x"]
+    assert [e.description for e in result[1].entries] == ["a"]
+
+
+def test_filter_by_status_does_not_mutate_input() -> None:
+    """The original cycles and their entries are unchanged after the call."""
+    cycles = _filter_fixture()
+    original_numbers = [c.number for c in cycles]
+    original_titles = [c.title for c in cycles]
+    original_entry_counts = [len(c.entries) for c in cycles]
+    original_descriptions = [
+        [e.description for e in c.entries] for c in cycles
+    ]
+
+    filter_by_status(cycles, MergeStatus.MERGED)
+    filter_by_status(cycles, MergeStatus.NO_OP)
+    filter_by_status(cycles, MergeStatus.NOT_MERGED)
+
+    assert [c.number for c in cycles] == original_numbers
+    assert [c.title for c in cycles] == original_titles
+    assert [len(c.entries) for c in cycles] == original_entry_counts
+    assert [[e.description for e in c.entries] for c in cycles] == original_descriptions
+
+
+def test_filter_by_status_empty_input_returns_empty_list() -> None:
+    """An empty input list returns [] and never raises."""
+    assert filter_by_status([], MergeStatus.MERGED) == []
+    assert filter_by_status([], MergeStatus.NO_OP) == []
+    assert filter_by_status([], MergeStatus.NOT_MERGED) == []
+
+
+def test_filter_by_status_returns_new_cycle_objects() -> None:
+    """Returned cycles are NEW objects, not the same as the input cycles."""
+    cycles = _filter_fixture()
+    result = filter_by_status(cycles, MergeStatus.MERGED)
+    assert result
+    for returned, original in zip(result, cycles):
+        assert returned is not original
+        assert returned.entries is not original.entries
+        # number and title are carried over by value.
+        assert returned.number == original.number
+        assert returned.title == original.title
