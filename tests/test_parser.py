@@ -265,3 +265,106 @@ def test_internal_whitespace_is_lenient() -> None:
         assert len(cycles) == 1, f"header {header!r} should parse"
         assert cycles[0].number == 2
         assert cycles[0].title == "Build"
+
+
+# ---------------------------------------------------------------------------
+# Status-inference tokenizer contract (TICKET-036/037/039; TICKET-035 subsumed)
+# ---------------------------------------------------------------------------
+
+
+def test_status_morphological_verb_forms_recognized() -> None:
+    """TICKET-036: verb forms reverting/reverts/abandoning/abandons match.
+
+    These fell through to MERGED before the marker expansion; each must now
+    classify NOT_MERGED.
+    """
+    log = (
+        "## Cycle 1: V\n"
+        "- reverting the change\n"
+        "- reverts the change\n"
+        "- abandoning the renderer\n"
+        "- abandons the renderer\n"
+    )
+    cycles = parse_log(log)
+    assert [e.status for e in cycles[0].entries] == [
+        MergeStatus.NOT_MERGED,
+        MergeStatus.NOT_MERGED,
+        MergeStatus.NOT_MERGED,
+        MergeStatus.NOT_MERGED,
+    ]
+
+
+def test_status_morphological_plural_forms_recognized() -> None:
+    """TICKET-036: plurals no-ops / no changes match the NO_OP markers."""
+    log = (
+        "## Cycle 1: P\n"
+        "- no-ops were recorded\n"
+        "- no changes in output\n"
+    )
+    cycles = parse_log(log)
+    assert [e.status for e in cycles[0].entries] == [
+        MergeStatus.NO_OP,
+        MergeStatus.NO_OP,
+    ]
+
+
+def test_status_hyphenated_compound_not_merged_recognized() -> None:
+    """TICKET-036: the hyphenated compound 'not-merged' is a single token and
+    now matches the NOT_MERGED marker (it fell through to MERGED before)."""
+    log = "## Cycle 1: C\n- not-merged\n"
+    cycles = parse_log(log)
+    assert cycles[0].entries[0].status is MergeStatus.NOT_MERGED
+
+
+def test_status_morphological_variants_respect_token_boundary() -> None:
+    """Regression guard: adding verb/plural forms must NOT loosen token
+    boundaries. A variant stem embedded in a larger word (reversion,
+    abandonment, abandoning-cart) is one token and stays MERGED."""
+    log = (
+        "## Cycle 1: B\n"
+        "- the reversion was clean\n"
+        "- abandonment of the branch\n"
+        "- shipped the abandoning-cart feature\n"
+    )
+    cycles = parse_log(log)
+    assert [e.status for e in cycles[0].entries] == [
+        MergeStatus.MERGED,
+        MergeStatus.MERGED,
+        MergeStatus.MERGED,
+    ]
+
+
+def test_status_marker_glued_to_hyphen_or_digit_defaults_merged() -> None:
+    """TICKET-039 (subsumes TICKET-035): a correctly spelled marker glued to a
+    hyphen or digit on either side is ONE token that equals no marker, so it
+    defaults to MERGED. This is a pinned contract, not a bug to fix silently.
+
+    Punctuation such as ':' or '.' IS a separator, so the clean/punctuated
+    forms still match (asserted to pin the asymmetry)."""
+    from epilogue.parser import _infer_status
+
+    # Glued to a hyphen or digit -> one token -> MERGED.
+    for glued in ("no-op-", "-no-op", "no--op", "no-op2", "reverted2", "abandoned-"):
+        assert _infer_status(glued) is MergeStatus.MERGED, glued
+    # Punctuation is a separator -> the marker still matches.
+    assert _infer_status("no-op: nothing changed") is MergeStatus.NO_OP
+    assert _infer_status("reverted.") is MergeStatus.NOT_MERGED
+
+
+def test_status_non_ascii_dropped_not_folded() -> None:
+    r"""TICKET-037: non-ASCII characters are dropped (not transliterated), so a
+    marker matches only when its ASCII stem survives tokenizing. The SAME
+    trailing character yields different statuses depending on the stem — a
+    pinned contract.
+
+    'revertedé' -> ['reverted'] (marker) -> NOT_MERGED;
+    'no-opé'    -> ['no-op']    (marker) -> NO_OP;
+    'abandoné'   -> ['abandon']  (no marker) -> MERGED.
+    """
+    from epilogue.parser import _infer_status, _tokenize
+
+    assert _tokenize("revertedé") == ["reverted"]
+    assert _tokenize("abandoné") == ["abandon"]
+    assert _infer_status("revertedé") is MergeStatus.NOT_MERGED
+    assert _infer_status("no-opé") is MergeStatus.NO_OP
+    assert _infer_status("abandoné") is MergeStatus.MERGED

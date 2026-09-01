@@ -140,9 +140,14 @@ exactly what the parser honors.
   order, with no other tokens between them. Matching is case-insensitive.
 * The marker phrases are:
 
-  * `not_merged`: `not merged`, `reverted`, `abandoned`
-  * `no_op`: `no-op`, `no op`, `no change`
+  * `not_merged`: `not merged`, `not-merged`, `reverted`, `reverting`,
+    `reverts`, `abandoned`, `abandoning`, `abandons`
+  * `no_op`: `no-op`, `no-ops`, `no op`, `no change`, `no changes`
   * `merged`: the default when no `not_merged` or `no_op` marker matches.
+
+  Common morphological variants (verb forms `reverting`/`reverts`,
+  `abandoning`/`abandons`; plurals `no-ops`, `no changes`; and the hyphenated
+  compound `not-merged`) are recognized alongside the base forms.
 
 * Precedence is `not_merged` > `no_op` > `merged` (default).
 
@@ -156,6 +161,20 @@ contrast, `abandoned the renderer` tokenizes to
 is `not_merged`. Likewise `added a no-op detector` is `no_op` (the `no-op`
 token matches), while `no op: nothing changed` is also `no_op` (the `no op`
 phrase matches).
+
+Two tokenizer consequences are pinned contracts (so a log author can predict
+the outcome):
+
+* **A marker must be a whole token.** A marker glued to a hyphen or a digit on
+  either side — `no-op-`, `-no-op`, `no--op`, `no-op2`, `reverted2` — is a
+  single token that equals none of the markers, so it defaults to `merged`.
+  Punctuation such as `:` or `.` IS a separator, so `no-op:` and `reverted.`
+  still match.
+* **Non-ASCII characters are dropped, not transliterated.** Accents, CJK, and
+  emoji are removed and act as separators, so a marker matches only when its
+  exact ASCII stem survives. The same trailing character gives different
+  results: `revertedé` is `not_merged` (stem `reverted` is a marker) but
+  `abandoné` is `merged` (stem `abandon` is not).
 
 ## Status filter
 

@@ -1,5 +1,7 @@
 # TICKET-035: Trailing/leading hyphen defeats status-marker matching
 
+**Status: CLOSED (Cycle 11, PR #15).** Subsumed by TICKET-039's pinned contract: a marker glued to a hyphen/digit is one token and defaults to MERGED (documented in parser docstring + README 'Status inference'; pinned by tests/test_parser.py::test_status_marker_glued_to_hyphen_or_digit_defaults_merged).
+
 ## Title
 A marker token followed by a trailing hyphen (or preceded by a leading hyphen)
 is tokenized as a *different* token, so the marker no longer matches and the
