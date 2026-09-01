@@ -1,5 +1,5 @@
 # TICKET-067: README "Structure" section omits `tests/test_main.py`
-**Status: OPEN.** — verified README/code drift; the repo ships a sixth test
+**Status: CLOSED (Cycle 27, PR #31).** — fixed in the same PR that opened it: the `test_main.py` line was added to the README "Structure" tests/ block.
 module (`tests/test_main.py`, subprocess tests for the `python -m epilogue`
 entry point) that the README "Structure" tree does not list.
 
