@@ -77,7 +77,8 @@ description using **token-based** matching, not free substring matching.
     ``("abandons",)``
   * ``NO_OP``: ``("no-op",)``, ``("no-ops",)``, ``("noops",)``,
     ``("no", "op")``, ``("no", "operation")``, ``("no", "operations")``,
-    ``("no", "change")``, ``("no", "changes")``, ``("no-changes",)``
+    ``("no", "change")``, ``("no", "changes")``, ``("no-changes",)``,
+    ``("nothing", "changed")``
 
   Common morphological variants (verb forms ``reverting``/``reverts``,
   ``abandoning``/``abandons``; plurals ``no-ops``, ``noops``, ``no changes``,
@@ -155,6 +156,7 @@ _NO_OP_MARKERS: tuple[tuple[str, ...], ...] = (
     ("no", "change"),
     ("no", "changes"),
     ("no-changes",),
+    ("nothing", "changed"),
 )
 
 # The ("not", "merged") phrase is the single marker that tolerates
