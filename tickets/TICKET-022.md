@@ -42,4 +42,4 @@ Extend `build_parser()` and `main()` in `epilogue/cli.py`:
 - Update the module docstring and the `--format` help text.
 - Update `README.md` Usage to document the new flag and show a JSON example.
 ---
-Status: OPEN
+Status: CLOSED (Cycle 6, PR #9, commit dea16f5)
