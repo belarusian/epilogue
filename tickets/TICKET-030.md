@@ -1,5 +1,7 @@
 # TICKET-030: Duplicate cycle numbers are silently kept, rendered, and range-matched
 
+**Status: CLOSED (Cycle 9, PR #12).** Documented + pinned (TICKET-030): duplicates kept in file order; range filter matches every in-range number. See parser docstring, tests/test_parser.py::test_duplicate_numbers_kept_in_file_order, tests/test_cli.py::test_range_filter_matches_every_in_range_number_for_duplicate_log, README 'Cycle header grammar'.
+
 ## Title
 The cycle-header grammar does not reject or deduplicate a log that contains
 two `## Cycle N` headers with the same number. Both cycles are kept, both are

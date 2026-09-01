@@ -1,5 +1,7 @@
 # TICKET-031: Out-of-order cycle numbers are kept in file order, not sorted
 
+**Status: CLOSED (Cycle 9, PR #12).** Documented + pinned (TICKET-031): cycles emitted in file order, never sorted by number. See parser docstring, tests/test_parser.py::test_out_of_order_numbers_kept_in_file_order_not_sorted, tests/test_render.py::test_render_out_of_order_cycles_in_file_order, README 'Cycle header grammar'.
+
 ## Title
 The cycle-header grammar returns cycles in file order and never sorts them by
 number. A log whose headers appear out of order (e.g. `## Cycle 5` before

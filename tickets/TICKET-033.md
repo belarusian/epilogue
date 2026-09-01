@@ -1,5 +1,7 @@
 # TICKET-033: Header whitespace contract is undocumented — anchored to line start, lenient internally
 
+**Status: CLOSED (Cycle 9, PR #12).** Documented + pinned (TICKET-033): header anchored to line start (indented = not a header); internal whitespace lenient. See parser docstring, tests/test_parser.py::test_indented_header_yields_no_cycle, tests/test_parser.py::test_internal_whitespace_is_lenient, README 'Cycle header grammar'.
+
 ## Title
 The cycle-header regex is anchored to the start of the line (an indented
 `## Cycle N` is NOT recognized) but is lenient about internal whitespace
