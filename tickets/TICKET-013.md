@@ -38,4 +38,4 @@ Create `tests/test_parser.py` (after TICKET-011/012 land) covering at minimum:
 Keep every existing test green.
 
 ---
-Status: OPEN (Cycle 3 audit)
+Status: CLOSED (Cycle 3, PR #3, merged 6bc0053)

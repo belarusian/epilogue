@@ -34,4 +34,4 @@ and renderer are still absent (TICKET-011), so the docstring should say the
 parse-to-render capability is pending, not that the CLI is.
 
 ---
-Status: OPEN (Cycle 3 audit)
+Status: CLOSED (Cycle 3, PR #3, merged 6bc0053)

@@ -43,4 +43,4 @@ Create `epilogue/parser.py` with a pure, stdlib-only, fully-typed function:
   TICKET-013). Do not wire it into `cli.py` yet (see TICKET-014 for the seam).
 
 ---
-Status: OPEN (Cycle 3 audit)
+Status: CLOSED (Cycle 3, PR #3, merged 6bc0053)

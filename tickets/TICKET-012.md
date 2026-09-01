@@ -41,4 +41,4 @@ behavior.
    precedence when multiple markers could apply.
 
 ---
-Status: OPEN (Cycle 3 audit)
+Status: CLOSED (Cycle 3, PR #3, merged 6bc0053)
