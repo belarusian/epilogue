@@ -58,3 +58,42 @@ fall within the requested range (a clear message is printed to stderr).
 ## Example
 
 Given a log file `log.md`:
+
+```markdown
+## Cycle 1: Bootstrap
+- Made the gate green
+- Laid the skeleton
+
+## Cycle 2: Build
+- Added the parser
+- No-op: nothing changed
+- Abandoned: the old approach
+```
+
+Running:
+
+```console
+python -m epilogue --project demo --from 1 --to 2 --log log.md
+```
+
+prints to stdout:
+
+```text
+# demo
+## Cycle 1: Bootstrap
+
+### Merged
+- Made the gate green
+- Laid the skeleton
+
+## Cycle 2: Build
+
+### Merged
+- Added the parser
+### No-ops
+- No-op: nothing changed
+### Not Merged
+- Abandoned: the old approach
+```
+
+The convention: the `# <project>` title is followed immediately by the first cycle header (no blank line); a blank line follows each cycle header; the status sub-sections (`### Merged`, `### No-ops`, `### Not Merged`) are emitted only when non-empty and are not separated by blank lines within a cycle; a blank line separates consecutive cycles. The three statuses stay truthfully distinguishable.
