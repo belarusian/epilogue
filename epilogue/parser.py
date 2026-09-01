@@ -77,15 +77,15 @@ description using **token-based** matching, not free substring matching.
     ``("abandons",)``
   * ``NO_OP``: ``("no-op",)``, ``("no-ops",)``, ``("noops",)``,
     ``("no", "op")``, ``("no", "operation")``, ``("no", "operations")``,
-    ``("no", "change")``, ``("no", "changes")``
+    ``("no", "change")``, ``("no", "changes")``, ``("no-changes",)``
 
   Common morphological variants (verb forms ``reverting``/``reverts``,
-  ``abandoning``/``abandons``; plurals ``no-ops``, ``noops``, ``no changes``;
-  and the hyphenated compound ``not-merged``) are recognized alongside the
-  base forms. A variant is only recognized when it is a whole token: a marker
-  glued to a hyphen or digit on either side (``"no-op-"``, ``"-no-op"``,
-  ``"no--op"``, ``"no-op2"``, ``"reverted2"``) is one token that equals
-  none of the markers and therefore defaults to ``MERGED``.
+  ``abandoning``/``abandons``; plurals ``no-ops``, ``noops``, ``no changes``,
+  ``no-changes``; and the hyphenated compound ``not-merged``) are recognized
+  alongside the base forms. A variant is only recognized when it is a whole
+  token: a marker glued to a hyphen or digit on either side (``"no-op-"``,
+  ``"-no-op"``, ``"no--op"``, ``"no-op2"``, ``"reverted2"``) is one token
+  that equals none of the markers and therefore defaults to ``MERGED``.
 
 * **The ``("not", "merged")`` phrase allows a bounded gap.** Natural phrasings
   of "wasn't merged" insert a word between ``not`` and ``merged`` (``yet``,
@@ -154,6 +154,7 @@ _NO_OP_MARKERS: tuple[tuple[str, ...], ...] = (
     ("no", "operations"),
     ("no", "change"),
     ("no", "changes"),
+    ("no-changes",),
 )
 
 # The ("not", "merged") phrase is the single marker that tolerates
