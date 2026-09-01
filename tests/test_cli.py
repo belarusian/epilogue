@@ -126,6 +126,85 @@ def test_success_renders_changelog_to_stdout(
     assert "a no-op: nothing changed" in out
 
 
+def test_text_format_ends_with_exactly_one_trailing_newline(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """TICKET-054: text stdout ends with exactly ONE trailing newline.
+
+    ``render()`` returns a string ending in a newline (and, for non-empty
+    input, a trailing blank line, i.e. two newlines). The CLI must normalize
+    so the text output ends with exactly one trailing newline — not zero and
+    not two.
+    """
+    log = tmp_path / "log.md"
+    log.write_text(
+        "## Cycle 1: A\n"
+        "- added the data model\n"
+        "## Cycle 2: B\n"
+        "- a no-op: nothing changed\n",
+        encoding="utf-8",
+    )
+    code = main(
+        [
+            "--project",
+            "demo",
+            "--from",
+            "1",
+            "--to",
+            "2",
+            "--log",
+            str(log),
+        ]
+    )
+    assert code == 0
+    out = capsys.readouterr().out
+    # Exactly one trailing newline: ends in a newline but not two.
+    assert out.endswith("\n")
+    assert not out.endswith("\n\n")
+
+
+def test_json_format_ends_with_exactly_one_trailing_newline(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """TICKET-054: json stdout ends with exactly ONE trailing newline.
+
+    ``render_json()`` returns ``json.dumps(doc)`` with no trailing newline.
+    The CLI must append exactly one so the json output ends with exactly one
+    trailing newline — not zero and not two — matching the text format.
+    """
+    log = tmp_path / "log.md"
+    log.write_text(
+        "## Cycle 1: A\n"
+        "- added the data model\n"
+        "## Cycle 2: B\n"
+        "- a no-op: nothing changed\n",
+        encoding="utf-8",
+    )
+    code = main(
+        [
+            "--project",
+            "demo",
+            "--from",
+            "1",
+            "--to",
+            "2",
+            "--log",
+            str(log),
+            "--format",
+            "json",
+        ]
+    )
+    assert code == 0
+    out = capsys.readouterr().out
+    # The document is still valid JSON (a single trailing newline is fine).
+    json.loads(out)
+    # Exactly one trailing newline: ends in a newline but not two.
+    assert out.endswith("\n")
+    assert not out.endswith("\n\n")
+
+
 def test_no_cycles_in_range_returns_one_and_stderr_message(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
