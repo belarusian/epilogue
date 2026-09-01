@@ -1,5 +1,7 @@
 # TICKET-046: "no operation" / "no operations" (the full word) are not recognized as NO_OP
 
+**Status: CLOSED (Cycle 15).** FIXED: the full-word expansions `no operation` / `no operations` are now recognized as `NO_OP`. Added `("no", "operation")` and `("no", "operations")` to `_NO_OP_MARKERS` in `epilogue/parser.py` (multi-token entries, since the tokenizer splits on whitespace), closing the gap with the already-handled compact `no-op` / `no-ops` / `no op` / `no change` / `no changes` forms. No NOT_MERGED marker or bounded-gap matcher changed. See parser docstring + README "Status inference"; pinned by tests/test_parser.py::test_status_no_operation_full_word_recognized, ::test_status_no_operations_full_word_recognized, ::test_status_no_operation_compact_form_regression. (Cycle 15, PR #18, commit 328ec72.)
+
 ## Title
 The `NO_OP` marker set recognizes the compact `no-op` / `no-ops` / `no op`
 forms and the `no change` / `no changes` forms, but NOT the full-word
