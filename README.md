@@ -54,3 +54,7 @@ Arguments:
 Exit codes: `0` on a successful render (changelog on stdout); `2` for usage
 errors (missing/invalid args, invalid range, missing log); `1` when no cycles
 fall within the requested range (a clear message is printed to stderr).
+
+## Example
+
+Given a log file `log.md`:
