@@ -263,6 +263,9 @@ prints to stdout (a single-line JSON document):
 {"project": "demo", "cycles": [{"number": 1, "title": "Bootstrap", "entries": [{"description": "Made the gate green", "status": "merged"}, {"description": "Laid the skeleton", "status": "merged"}]}, {"number": 2, "title": "Build", "entries": [{"description": "Added the parser", "status": "merged"}, {"description": "No-op: nothing changed", "status": "no_op"}, {"description": "Abandoned: the old approach", "status": "not_merged"}]}]}
 ```
 
-The `project` key is omitted entirely when `--project` is not given (the
-literal string `"None"` is never emitted). The three statuses stay truthfully
-distinguishable as the stable tokens `merged`, `no_op`, and `not_merged`.
+Because `--project` is a required CLI argument, the `project` key is always
+present in CLI output (the literal string `"None"` is never emitted). The
+omission of the `project` key is a library-level behavior of
+`render_json(cycles, project=None)` and is not reachable through the CLI.
+The three statuses stay truthfully distinguishable as the stable tokens
+`merged`, `no_op`, and `not_merged`.
