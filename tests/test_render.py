@@ -403,3 +403,53 @@ def test_filter_by_status_returns_new_cycle_objects() -> None:
         # number and title are carried over by value.
         assert returned.number == original.number
         assert returned.title == original.title
+
+
+# ---------------------------------------------------------------------------
+# Cycle-header grammar contracts at the render level (TICKET-031, TICKET-032)
+# ---------------------------------------------------------------------------
+
+
+def test_render_out_of_order_cycles_in_file_order() -> None:
+    """TICKET-031: render emits cycles in the given (file) order, not sorted."""
+    cycles = [
+        Cycle(
+            number=5,
+            title="A",
+            entries=[Entry(description="x", status=MergeStatus.MERGED)],
+        ),
+        Cycle(
+            number=3,
+            title="B",
+            entries=[Entry(description="y", status=MergeStatus.MERGED)],
+        ),
+    ]
+    text = render(cycles)
+    lines = text.splitlines()
+    # Cycle 5's header appears above cycle 3's header (file order, not sorted).
+    assert "## Cycle 5: A" in lines
+    assert "## Cycle 3: B" in lines
+    assert lines.index("## Cycle 5: A") < lines.index("## Cycle 3: B")
+
+
+def test_render_leading_zero_re_emitted_normalized() -> None:
+    """TICKET-032: a cycle parsed from '## Cycle 007' renders as '## Cycle 7'."""
+    from epilogue.parser import parse_log
+
+    cycles = parse_log("## Cycle 007: Build\n- x\n")
+    assert cycles[0].number == 7
+    text = render(cycles)
+    lines = text.splitlines()
+    # The normalized header is emitted; the zero-padded form never appears.
+    assert "## Cycle 7: Build" in lines
+    assert "## Cycle 007: Build" not in lines
+
+
+def test_render_json_leading_zero_number_is_int() -> None:
+    """TICKET-032: render_json emits the normalized base-10 int (7, not '007')."""
+    from epilogue.parser import parse_log
+
+    cycles = parse_log("## Cycle 007: Build\n- x\n")
+    doc = json.loads(render_json(cycles))
+    assert doc["cycles"][0]["number"] == 7
+    assert isinstance(doc["cycles"][0]["number"], int)

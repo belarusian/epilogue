@@ -1,5 +1,7 @@
 # TICKET-032: Leading-zero cycle numbers are silently normalized and re-emitted without zeros
 
+**Status: CLOSED (Cycle 9, PR #12).** Documented + pinned (TICKET-032): number parsed as base-10 int, leading zeros dropped and re-emitted normalized. See parser docstring, tests/test_parser.py::test_leading_zero_number_normalized_to_int, tests/test_render.py::test_render_leading_zero_re_emitted_normalized, README 'Cycle header grammar'.
+
 ## Title
 A header written with leading zeros (`## Cycle 007: Build`) is parsed to the
 integer `7` and re-emitted by the renderer as `## Cycle 7: Build` — the zeros

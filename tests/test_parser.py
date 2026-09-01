@@ -190,3 +190,78 @@ def test_status_genuine_markers_still_work() -> None:
         Entry(description="abandoned the renderer", status=MergeStatus.NOT_MERGED),
         Entry(description="no change in output", status=MergeStatus.NO_OP),
     ]
+
+
+# ---------------------------------------------------------------------------
+# Cycle-header grammar contracts (TICKET-030..033)
+# ---------------------------------------------------------------------------
+
+
+def test_duplicate_numbers_kept_in_file_order() -> None:
+    """TICKET-030: two headers with the SAME number keep BOTH, in file order."""
+    log = (
+        "## Cycle 2: A\n"
+        "- x\n"
+        "## Cycle 2: B\n"
+        "- y\n"
+    )
+    cycles = parse_log(log)
+    assert len(cycles) == 2
+    assert [c.number for c in cycles] == [2, 2]
+    assert [c.title for c in cycles] == ["A", "B"]
+    # Each cycle keeps its own entries, in file order.
+    assert cycles[0].entries == [
+        Entry(description="x", status=MergeStatus.MERGED)
+    ]
+    assert cycles[1].entries == [
+        Entry(description="y", status=MergeStatus.MERGED)
+    ]
+
+
+def test_out_of_order_numbers_kept_in_file_order_not_sorted() -> None:
+    """TICKET-031: cycles are returned in FILE ORDER, never sorted by number."""
+    log = (
+        "## Cycle 5: A\n"
+        "- x\n"
+        "## Cycle 3: B\n"
+        "- y\n"
+    )
+    cycles = parse_log(log)
+    assert len(cycles) == 2
+    # File order (5 then 3), NOT sorted ascending (3 then 5).
+    assert [c.number for c in cycles] == [5, 3]
+    assert [c.title for c in cycles] == ["A", "B"]
+
+
+def test_leading_zero_number_normalized_to_int() -> None:
+    """TICKET-032: the number is a base-10 int, so leading zeros are dropped."""
+    cycles = parse_log("## Cycle 007: Build\n- x\n")
+    assert len(cycles) == 1
+    assert cycles[0].number == 7
+    assert isinstance(cycles[0].number, int)
+    assert cycles[0].title == "Build"
+
+
+def test_indented_header_yields_no_cycle() -> None:
+    """TICKET-033: an indented header (spaces or tab) is NOT a header."""
+    # Leading spaces.
+    assert parse_log("  ## Cycle 2: Build\n- x\n") == []
+    # Leading tab.
+    assert parse_log("\t## Cycle 2: Build\n- x\n") == []
+    # Mixed leading whitespace.
+    assert parse_log(" \t ## Cycle 2: Build\n- x\n") == []
+
+
+def test_internal_whitespace_is_lenient() -> None:
+    """TICKET-033: tabs, multiple spaces, and spaces around the colon parse."""
+    cases = [
+        "##\tCycle 2: Build",   # tab between ## and Cycle
+        "##  Cycle 2: Build",    # multiple spaces between ## and Cycle
+        "## Cycle 2 : Build",    # space before the colon
+        "## Cycle 2:Build",      # no space after the colon
+    ]
+    for header in cases:
+        cycles = parse_log(header + "\n- x\n")
+        assert len(cycles) == 1, f"header {header!r} should parse"
+        assert cycles[0].number == 2
+        assert cycles[0].title == "Build"

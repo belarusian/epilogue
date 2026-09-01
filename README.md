@@ -100,6 +100,31 @@ prints to stdout:
 
 The convention: the `# <project>` title is followed immediately by the first cycle header (no blank line); a blank line follows each cycle header; the status sub-sections (`### Merged`, `### No-ops`, `### Not Merged`) are emitted only when non-empty and are not separated by blank lines within a cycle; a blank line separates consecutive cycles. The three statuses stay truthfully distinguishable.
 
+## Cycle header grammar
+
+Cycles are delimited by lines of the form `## Cycle N: <title>`, where
+`N` is a non-negative integer and `<title>` is the rest of the line (which
+may be empty). Everything before the first such header is ignored
+(preamble). The parser honors the following contracts, so a log author
+knows exactly what is safe:
+
+* **Duplicates are kept, in file order.** Two `## Cycle N` headers with the
+  *same* number both survive: both are rendered as separate sections, and
+  the `--from`/`--to` range filter matches EVERY cycle whose number falls
+  in range (so `--from 2 --to 2` returns both).
+* **File order, not sorted.** Cycles are emitted in the order their headers
+  appear in the file, never sorted by number. A `## Cycle 5` that precedes
+  a `## Cycle 3` renders `5` above `3`.
+* **Leading zeros are dropped.** The number is parsed as a base-10
+  integer, so `## Cycle 007: Build` is rendered as `## Cycle 7: Build`
+  (and `render_json` emits `7`).
+* **Anchored to line start; lenient internally.** A header must begin at
+  the start of the line (column 0); an indented `## Cycle N` (leading
+  spaces or a tab) is *not* a header. Internal whitespace is lenient: tabs,
+  multiple spaces, and spaces around the colon are all accepted (e.g.
+  `##\tCycle 2: Build`, `##  Cycle 2: Build`, `## Cycle 2 : Build`, and
+  `## Cycle 2:Build` all parse to number 2).
+
 ## Status inference
 
 The parser classifies each log entry into one of the three `MergeStatus`

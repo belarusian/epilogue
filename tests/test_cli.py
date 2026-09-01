@@ -623,3 +623,37 @@ def test_default_no_status_is_backward_compatible(
     assert "this one was reverted" in out
     assert "shipped the CLI shell" in out
     assert "abandoned the renderer" in out
+
+
+def test_range_filter_matches_every_in_range_number_for_duplicate_log(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """TICKET-030: --from 2 --to 2 returns BOTH cycles sharing number 2."""
+    log = tmp_path / "log.md"
+    log.write_text(
+        "## Cycle 2: A\n"
+        "- x\n"
+        "## Cycle 2: B\n"
+        "- y\n",
+        encoding="utf-8",
+    )
+    code = main(
+        [
+            "--project",
+            "demo",
+            "--from",
+            "2",
+            "--to",
+            "2",
+            "--log",
+            str(log),
+        ]
+    )
+    assert code == 0
+    out = capsys.readouterr().out
+    # Both identically-numbered cycles are rendered as separate sections.
+    assert "## Cycle 2: A" in out
+    assert "## Cycle 2: B" in out
+    assert "x" in out
+    assert "y" in out

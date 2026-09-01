@@ -13,8 +13,29 @@ Cycles are delimited by lines of the form::
 
 where ``N`` is a non-negative integer and ``<title>`` is the rest of the
 line (which may be empty). Everything before the first such header is
-ignored (preamble). A new header starts a new cycle; cycles are returned in
-file order.
+ignored (preamble). A new header starts a new cycle.
+
+The grammar is pinned by the following contracts (TICKET-030..033):
+
+* **Duplicates are kept, in file order.** A log with two ``## Cycle N``
+  headers of the *same* number keeps BOTH cycles, in file order; both are
+  rendered as separate sections. The ``--from``/``--to`` range filter
+  matches EVERY cycle whose number falls in range, so ``--from 2 --to 2``
+  returns both.
+* **File order, not sorted.** Cycles are returned in FILE ORDER, never
+  sorted by number. A log with ``## Cycle 5`` before ``## Cycle 3``
+  renders 5 above 3. The range filter selects by number but preserves file
+  order within the range.
+* **Leading zeros are dropped.** The number is parsed as a base-10
+  integer, so ``## Cycle 007: Build`` parses to number ``7`` and is
+  re-emitted by the renderer as ``## Cycle 7: Build`` (``render_json``
+  emits ``7``).
+* **Anchored to line start; lenient internally.** A header must begin at
+  the START of the line (column 0); an indented ``## Cycle N`` (leading
+  spaces or a tab) is NOT a header (yields no cycle). Internal whitespace
+  is lenient: tabs, multiple spaces, and spaces around the colon are all
+  accepted (e.g. ``##\tCycle 2: Build``, ``##  Cycle 2: Build``,
+  ``## Cycle 2 : Build``, and ``## Cycle 2:Build`` all parse to number 2).
 
 Line items
 ----------
