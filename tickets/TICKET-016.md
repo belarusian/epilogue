@@ -48,3 +48,5 @@ Create `epilogue/render.py` with a pure, stdlib-only, fully-typed function:
   is trivially unit-testable (see TICKET-017).
 - Do NOT do I/O, argparse, or file reads — keep it a pure function of its
   inputs so the CLI (TICKET-018) and tests share one surface.
+---
+Status: CLOSED (Cycle 4, PR #6, commit 1de4f13)

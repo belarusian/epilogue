@@ -61,3 +61,5 @@ Wire the full pipeline in `main()` (after TICKET-016/017 land the renderer):
 - Update `main()`'s docstring (`cli.py:76-88`) to state the new contract.
 - Add `render` to the `epilogue` public API (`__init__.py`) so the CLI and tests
   share one surface (see TICKET-016).
+---
+Status: CLOSED (Cycle 4, PR #6, commit 1de4f13)

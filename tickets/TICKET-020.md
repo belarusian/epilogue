@@ -52,3 +52,5 @@ After TICKET-016/018 land, update the docs to match the real behavior:
 - `epilogue/__init__.py` docstring and `__all__`: add `render` to the public API
   and describe the parse-to-render capability as shipped, not pending.
 Keep every claim verifiable against the code after the build tickets land.
+---
+Status: CLOSED (Cycle 4, PR #6, commit 1de4f13)

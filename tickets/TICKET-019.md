@@ -47,3 +47,5 @@ Rewrite `tests/test_cli.py` (after TICKET-018 lands) to cover the real contract:
 - add a test that `--project` is reflected in the output (it is now used, not
   discarded).
 Keep every other module's tests green.
+---
+Status: CLOSED (Cycle 4, PR #6, commit 1de4f13)
