@@ -183,3 +183,110 @@ def test_project_is_reflected_in_output(
     assert "# my-special-project" in out
     # The title is the first line of the rendered changelog.
     assert out.splitlines()[0] == "# my-special-project"
+
+
+# ---------------------------------------------------------------------------
+# Edge-case tests (Cycle 5)
+# ---------------------------------------------------------------------------
+
+
+def test_empty_log_file_returns_one(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """A 0-byte log file yields no cycles -> exit 1."""
+    log = tmp_path / "empty.md"
+    log.write_bytes(b"")
+    code = main(
+        [
+            "--project", "demo",
+            "--from", "1", "--to", "5",
+            "--log", str(log),
+        ]
+    )
+    assert code == 1
+    err = capsys.readouterr().err
+    assert "no cycles" in err.lower() or "No cycles" in err
+
+
+def test_preamble_only_log_returns_one(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """A log with no '## Cycle' headers yields no cycles -> exit 1."""
+    log = tmp_path / "preamble.md"
+    log.write_text(
+        "# My Project\n"
+        "Some preamble text.\n"
+        "No cycle headers here.\n",
+        encoding="utf-8",
+    )
+    code = main(
+        [
+            "--project", "demo",
+            "--from", "1", "--to", "5",
+            "--log", str(log),
+        ]
+    )
+    assert code == 1
+    err = capsys.readouterr().err
+    assert "no cycles" in err.lower() or "No cycles" in err
+
+
+def test_negative_from_with_in_range_cycle_returns_zero(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """argparse accepts negative ints; --from -1 --to 2 renders cycles 1 and 2."""
+    log = tmp_path / "log.md"
+    log.write_text(
+        "## Cycle 1: First\n"
+        "- alpha\n"
+        "\n"
+        "## Cycle 2: Second\n"
+        "- beta\n",
+        encoding="utf-8",
+    )
+    code = main(
+        [
+            "--project", "demo",
+            "--from", "-1", "--to", "2",
+            "--log", str(log),
+        ]
+    )
+    assert code == 0
+    out = capsys.readouterr().out
+    assert "## Cycle 1: First" in out
+    assert "## Cycle 2: Second" in out
+    assert "- alpha" in out
+    assert "- beta" in out
+
+
+def test_duplicate_cycle_numbers_both_rendered(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Two '## Cycle 1:' headers produce two cycles; both survive the filter."""
+    log = tmp_path / "log.md"
+    log.write_text(
+        "## Cycle 1: First\n"
+        "- alpha\n"
+        "\n"
+        "## Cycle 1: Second\n"
+        "- beta\n",
+        encoding="utf-8",
+    )
+    code = main(
+        [
+            "--project", "demo",
+            "--from", "1", "--to", "1",
+            "--log", str(log),
+        ]
+    )
+    assert code == 0
+    out = capsys.readouterr().out
+    # Both cycles must appear
+    assert "## Cycle 1: First" in out
+    assert "## Cycle 1: Second" in out
+    assert "- alpha" in out
+    assert "- beta" in out
