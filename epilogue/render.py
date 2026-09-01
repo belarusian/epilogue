@@ -1,9 +1,9 @@
 """Renderer for epilogue cycle logs.
 
 This module turns a parsed ``list[Cycle]`` into release-note-style changelog
-text. It is a pure, stdlib-only, fully-typed function: no I/O, no argparse,
-no file reads. The CLI (a later build cycle) and the tests share this one
-surface.
+text (``render``) or a machine-readable JSON document (``render_json``). Both
+are pure, stdlib-only, fully-typed functions: no I/O, no argparse, no file
+reads. The CLI (a later build cycle) and the tests share these surfaces.
 
 Rendering convention
 --------------------
@@ -39,6 +39,8 @@ collapsed.
 """
 
 from __future__ import annotations
+
+import json
 
 from epilogue.model import Cycle, MergeStatus
 
@@ -92,3 +94,49 @@ def render(cycles: list[Cycle], *, project: str | None = None) -> str:
             lines.append("")
 
     return "\n".join(lines) + "\n"
+
+
+def render_json(cycles: list[Cycle], *, project: str | None = None) -> str:
+    """Render a list of :class:`Cycle` into a machine-readable JSON document.
+
+    This is the structured counterpart to :func:`render`. It is pure,
+    stdlib-only, and fully typed: no I/O, no argparse. The CLI and the tests
+    share this one surface.
+
+    The returned document is a ``str`` (via :func:`json.dumps`) encoding an
+    object with:
+
+    * an optional ``"project"`` key — present only when ``project`` is not
+      ``None`` (the literal string ``"None"`` is never emitted);
+    * a ``"cycles"`` array, one object per cycle, in the given order.
+
+    Each cycle object carries ``"number"`` (int), ``"title"`` (str), and
+    ``"entries"`` (an array of ``{"description", "status"}`` objects, in the
+    entry's original order). ``"status"`` is the :class:`MergeStatus` enum's
+    ``.value`` string (``"merged"`` / ``"no_op"`` / ``"not_merged"``), so the
+    three-way distinction is preserved as a stable, machine-checkable token.
+
+    Args:
+        cycles: The cycles to render, in the order they should appear.
+        project: Optional project name. When provided it is emitted as the
+            ``"project"`` key; when ``None`` the key is omitted entirely.
+
+    Returns:
+        A JSON document as a ``str``. An empty ``cycles`` list yields
+        ``{"cycles": []}`` (plus ``"project"`` when given) and never raises.
+    """
+    doc: dict[str, object] = {}
+    if project is not None:
+        doc["project"] = project
+    doc["cycles"] = [
+        {
+            "number": cycle.number,
+            "title": cycle.title,
+            "entries": [
+                {"description": entry.description, "status": entry.status.value}
+                for entry in cycle.entries
+            ],
+        }
+        for cycle in cycles
+    ]
+    return json.dumps(doc)

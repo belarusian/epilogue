@@ -9,8 +9,10 @@ must each be distinguishable in the output.
 
 from __future__ import annotations
 
+import json
+
 from epilogue.model import Cycle, Entry, MergeStatus
-from epilogue.render import render
+from epilogue.render import render, render_json
 
 
 def _cycle_block(text: str, number: int) -> list[str]:
@@ -179,5 +181,85 @@ def test_render_is_pure_and_returns_str() -> None:
     assert isinstance(first, str)
     assert first == second
     # Mutating the input list afterwards does not affect an already-built string.
+    cycles.append(Cycle(number=9, title="Late", entries=[]))
+    assert first == second
+
+
+# ---------------------------------------------------------------------------
+# render_json tests (TICKET-021)
+# ---------------------------------------------------------------------------
+
+
+def test_render_json_multi_cycle_all_three_statuses() -> None:
+    """Each status lands as its own stable token; structure is exact."""
+    doc = json.loads(render_json(_all_three_cycles(), project="demo"))
+
+    assert doc["project"] == "demo"
+    assert [c["number"] for c in doc["cycles"]] == [1, 2]
+    assert [c["title"] for c in doc["cycles"]] == ["Bootstrap", "Build"]
+
+    c1 = doc["cycles"][0]
+    assert c1["entries"] == [
+        {"description": "added the data model", "status": "merged"},
+        {"description": "a no-op: nothing changed", "status": "no_op"},
+        {"description": "this one was reverted", "status": "not_merged"},
+        {"description": "wired up the package", "status": "merged"},
+    ]
+    c2 = doc["cycles"][1]
+    assert c2["entries"] == [
+        {"description": "shipped the CLI shell", "status": "merged"},
+        {"description": "abandoned the renderer", "status": "not_merged"},
+    ]
+
+    # The three-way distinction is preserved as distinct tokens (truthfulness).
+    all_statuses = [e["status"] for c in doc["cycles"] for e in c["entries"]]
+    assert set(all_statuses) == {"merged", "no_op", "not_merged"}
+
+
+def test_render_json_project_absent_key_is_omitted() -> None:
+    """When project is None the 'project' key is ABSENT (never the string 'None')."""
+    doc = json.loads(render_json(_all_three_cycles()))
+    assert "project" not in doc
+    assert "None" not in json.dumps(doc)
+    assert doc["cycles"]  # cycles still present
+
+
+def test_render_json_empty_cycles_is_well_defined() -> None:
+    """Empty cycles -> {"cycles": []} (plus project when given); never raises."""
+    assert json.loads(render_json([])) == {"cycles": []}
+    assert json.loads(render_json([], project="demo")) == {
+        "project": "demo",
+        "cycles": [],
+    }
+
+
+def test_render_json_preserves_cycle_and_entry_order() -> None:
+    """Cycle order and, within a cycle, entry order are preserved verbatim."""
+    cycles = [
+        Cycle(
+            number=3,
+            title="C",
+            entries=[
+                Entry(description="x", status=MergeStatus.MERGED),
+                Entry(description="y", status=MergeStatus.NO_OP),
+                Entry(description="z", status=MergeStatus.NOT_MERGED),
+            ],
+        ),
+        Cycle(number=1, title="A", entries=[]),
+    ]
+    doc = json.loads(render_json(cycles))
+    assert [c["number"] for c in doc["cycles"]] == [3, 1]
+    assert [e["description"] for e in doc["cycles"][0]["entries"]] == ["x", "y", "z"]
+    assert doc["cycles"][1]["entries"] == []
+
+
+def test_render_json_returns_str_and_is_pure() -> None:
+    """Output is a str and stable across repeated calls (pure function)."""
+    cycles = _all_three_cycles()
+    first = render_json(cycles, project="demo")
+    second = render_json(cycles, project="demo")
+    assert isinstance(first, str)
+    assert first == second
+    # Mutating the input afterwards does not affect an already-built string.
     cycles.append(Cycle(number=9, title="Late", entries=[]))
     assert first == second

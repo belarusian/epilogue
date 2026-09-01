@@ -41,8 +41,8 @@ The CLI runs the real parse-to-render pipeline: it reads the cycle log,
 parses it into cycles, filters to the requested `--from`/`--to` range, renders
 the changelog, and prints it to stdout:
 
-    epilogue --project <name> --from <n> --to <m> --log <path>
-    python -m epilogue --project <name> --from <n> --to <m> --log <path>
+    epilogue --project <name> --from <n> --to <m> --log <path> [--format {text,json}]
+    python -m epilogue --project <name> --from <n> --to <m> --log <path> [--format {text,json}]
 
 Arguments:
 
@@ -50,6 +50,8 @@ Arguments:
 - `--from` (int, required) — first cycle number (inclusive).
 - `--to` (int, required) — last cycle number (inclusive); must be `>= --from`.
 - `--log` (path, required) — path to the cycle log file; must exist.
+- `--format` (str, optional) — output format: `text` (the default, the
+  human-readable changelog) or `json` (a machine-readable document).
 
 Exit codes: `0` on a successful render (changelog on stdout); `2` for usage
 errors (missing/invalid args, invalid range, missing log); `1` when no cycles
@@ -97,3 +99,27 @@ prints to stdout:
 ```
 
 The convention: the `# <project>` title is followed immediately by the first cycle header (no blank line); a blank line follows each cycle header; the status sub-sections (`### Merged`, `### No-ops`, `### Not Merged`) are emitted only when non-empty and are not separated by blank lines within a cycle; a blank line separates consecutive cycles. The three statuses stay truthfully distinguishable.
+
+## Machine-readable output
+
+Pass `--format json` to emit a machine-readable document instead of the
+human-readable changelog. The document is a JSON object with a `project` key
+and a `cycles` array. Each cycle carries `number`, `title`, and `entries`;
+each entry carries `description` and `status`, where `status` is a stable
+token: `merged`, `no_op`, or `not_merged`.
+
+Given the same `log.md` as the text example above, running:
+
+```console
+python -m epilogue --project demo --from 1 --to 2 --log log.md --format json
+```
+
+prints to stdout (a single-line JSON document):
+
+```json
+{"project": "demo", "cycles": [{"number": 1, "title": "Bootstrap", "entries": [{"description": "Made the gate green", "status": "merged"}, {"description": "Laid the skeleton", "status": "merged"}]}, {"number": 2, "title": "Build", "entries": [{"description": "Added the parser", "status": "merged"}, {"description": "No-op: nothing changed", "status": "no_op"}, {"description": "Abandoned: the old approach", "status": "not_merged"}]}]}
+```
+
+The `project` key is omitted entirely when `--project` is not given (the
+literal string `"None"` is never emitted). The three statuses stay truthfully
+distinguishable as the stable tokens `merged`, `no_op`, and `not_merged`.
