@@ -1,5 +1,5 @@
 # TICKET-068: README "Structure" `__init__.py` comment omits `render_json` and `filter_by_status`
-**Status: OPEN.**
+**Status: CLOSED (Cycle 28, PR #33).** — fixed in the same PR that opened it: the `__init__.py` comment in the README "Structure" section now lists all eight re-exports (`render_json` and `filter_by_status` added).
 
 ## Title
 The README "Structure" section's `__init__.py` comment lists six public-API
