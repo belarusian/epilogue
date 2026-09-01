@@ -9,6 +9,7 @@ ground-truth log file is read.
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pytest
@@ -290,3 +291,125 @@ def test_duplicate_cycle_numbers_both_rendered(
     assert "## Cycle 1: Second" in out
     assert "- alpha" in out
     assert "- beta" in out
+
+
+# ---------------------------------------------------------------------------
+# --format json tests (TICKET-023)
+# ---------------------------------------------------------------------------
+
+
+def test_format_json_success_exit_zero_valid_json(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """--format json with in-range cycles exits 0 and prints valid JSON."""
+    log = tmp_path / "log.md"
+    log.write_text(
+        "## Cycle 1: A\n"
+        "- added the data model\n"
+        "## Cycle 2: B\n"
+        "- a no-op: nothing changed\n"
+        "- abandoned the renderer\n",
+        encoding="utf-8",
+    )
+    code = main(
+        [
+            "--project", "demo",
+            "--from", "1", "--to", "2",
+            "--log", str(log),
+            "--format", "json",
+        ]
+    )
+    assert code == 0
+    out = capsys.readouterr().out
+    doc = json.loads(out)  # stdout must be valid JSON
+    assert doc["project"] == "demo"
+    assert [c["number"] for c in doc["cycles"]] == [1, 2]
+    assert doc["cycles"][0]["entries"][0] == {
+        "description": "added the data model",
+        "status": "merged",
+    }
+    # The three-way distinction is preserved as distinct tokens.
+    statuses = [e["status"] for c in doc["cycles"] for e in c["entries"]]
+    assert "merged" in statuses
+    assert "no_op" in statuses
+    assert "not_merged" in statuses
+
+
+def test_format_json_no_cycles_in_range_exit_one_not_empty_json(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """JSON path with no cycles in range exits 1 with a stderr message (not
+    an empty JSON document + exit 0)."""
+    log = tmp_path / "log.md"
+    log.write_text(
+        "## Cycle 5: X\n"
+        "- something merged\n",
+        encoding="utf-8",
+    )
+    code = main(
+        [
+            "--project", "demo",
+            "--from", "1", "--to", "2",
+            "--log", str(log),
+            "--format", "json",
+        ]
+    )
+    assert code == 1
+    captured = capsys.readouterr()
+    # No JSON document is printed to stdout on the no-cycles path.
+    assert captured.out == ""
+    assert "no cycles in range" in captured.err
+    assert "1..2" in captured.err
+
+
+def test_format_json_invalid_value_is_usage_error(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """An invalid --format value is a usage error (exit 2 via argparse)."""
+    log = tmp_path / "log.md"
+    log.write_text("## Cycle 1: A\n- x\n", encoding="utf-8")
+    with pytest.raises(SystemExit) as excinfo:
+        main(
+            [
+                "--project", "demo",
+                "--from", "1", "--to", "1",
+                "--log", str(log),
+                "--format", "yaml",
+            ]
+        )
+    assert excinfo.value.code == 2
+    err = capsys.readouterr().err
+    assert "invalid choice" in err
+
+
+def test_default_format_is_text_backward_compatible(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Omitting --format still yields the human-readable text changelog."""
+    log = tmp_path / "log.md"
+    log.write_text(
+        "## Cycle 1: A\n"
+        "- added the data model\n",
+        encoding="utf-8",
+    )
+    code = main(
+        [
+            "--project", "demo",
+            "--from", "1", "--to", "1",
+            "--log", str(log),
+        ]
+    )
+    assert code == 0
+    out = capsys.readouterr().out
+    # Human-readable markers, not a JSON document.
+    assert "# demo" in out
+    assert "## Cycle 1: A" in out
+    assert "### Merged" in out
+    assert out.strip().startswith("# demo")
+    # It must NOT be parseable as a JSON document (the text shape is not JSON).
+    with pytest.raises(ValueError):
+        json.loads(out)
