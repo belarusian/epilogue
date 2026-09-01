@@ -22,6 +22,7 @@ Built cycle-by-cycle; see the ground-truth log: `../ai/cycle-001-epilogue-gate.m
       test_render.py # renderer tests
       test_package.py# importability / public-API tests
       test_cli.py    # CLI tests (help, errors, success, no-cycles-in-range)
+      test_main.py   # entry-point (python -m epilogue) subprocess tests
     pyproject.toml   # stdlib-only packaging + [project.scripts] epilogue
 
 ## The gate
