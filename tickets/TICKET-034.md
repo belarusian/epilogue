@@ -73,3 +73,5 @@ Decide the contract and make it true:
 Add a test in `tests/test_render.py` asserting that mutating a returned entry
 does NOT change the input (or, if aliasing is kept, asserting the shared
 identity), so the contract is pinned by the gate.
+
+Status: CLOSED (Cycle 10, PR #13). filter_by_status now returns fully independent Entry copies (dataclasses.replace) so mutating a returned entry never affects the input; docstring + module docstring updated; pinned by tests/test_render.py::test_filter_by_status_returns_new_entry_objects.

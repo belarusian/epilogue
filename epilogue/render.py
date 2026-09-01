@@ -42,12 +42,15 @@ Status selector
 :func:`filter_by_status(cycles, status)` is a pure, stdlib-only selector
 that returns a NEW list of NEW :class:`Cycle` objects containing only the
 entries whose ``status is status``; cycles with no matching entry are
-dropped. It never mutates its input and never raises.
+dropped. The returned cycles contain NEW :class:`Entry` objects (fully
+independent copies of the matching input entries), so mutating a returned
+entry never affects the input. It never mutates its input and never raises.
 """
 
 from __future__ import annotations
 
 import json
+from dataclasses import replace
 
 from epilogue.model import Cycle, MergeStatus
 
@@ -157,7 +160,9 @@ def filter_by_status(cycles: list[Cycle], status: MergeStatus) -> list[Cycle]:
     Each returned cycle keeps its ``number`` and ``title`` but contains ONLY the
     entries whose ``entry.status is status``. Any cycle with zero matching
     entries is dropped entirely. Cycle order and, within a cycle, entry order
-    are preserved.
+    are preserved. The returned cycles contain NEW :class:`Entry` objects (fully
+    independent copies of the matching input entries), so mutating a returned
+    entry never affects the input.
 
     Args:
         cycles: The cycles to filter, in the order they should appear.
@@ -170,7 +175,7 @@ def filter_by_status(cycles: list[Cycle], status: MergeStatus) -> list[Cycle]:
     """
     result: list[Cycle] = []
     for cycle in cycles:
-        matching = [entry for entry in cycle.entries if entry.status is status]
+        matching = [replace(entry) for entry in cycle.entries if entry.status is status]
         if not matching:
             continue
         result.append(

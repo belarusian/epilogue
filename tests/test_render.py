@@ -405,6 +405,33 @@ def test_filter_by_status_returns_new_cycle_objects() -> None:
         assert returned.title == original.title
 
 
+def test_filter_by_status_returns_new_entry_objects() -> None:
+    """Returned entries are NEW objects; mutating one never touches the input.
+
+    TICKET-034: filter_by_status must return fully independent Entry copies so
+    that mutating a returned entry does NOT mutate the original input entry.
+    """
+    cycles = _filter_fixture()
+    original = cycles[0]
+    original_first_entry = original.entries[0]
+    original_description = original_first_entry.description
+
+    result = filter_by_status(cycles, MergeStatus.MERGED)
+    assert result
+    returned_entry = result[0].entries[0]
+
+    # The returned entry is a NEW object, not the same object as the input.
+    assert returned_entry is not original_first_entry
+    # It carries the same field values by value.
+    assert returned_entry.description == original_description
+    assert returned_entry.status is original_first_entry.status
+
+    # Mutating the returned entry must NOT change the original input entry.
+    returned_entry.description = "MUTATED"
+    assert original_first_entry.description == original_description
+    assert original.entries[0].description == original_description
+
+
 # ---------------------------------------------------------------------------
 # Cycle-header grammar contracts at the render level (TICKET-031, TICKET-032)
 # ---------------------------------------------------------------------------
