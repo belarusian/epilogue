@@ -145,8 +145,9 @@ exactly what the parser honors.
   tokens (see the next bullet). Matching is case-insensitive.
 * The marker phrases are:
 
-  * `not_merged`: `not merged`, `not-merged`, `un-merged`, `reverted`,
-    `reverting`, `reverts`, `abandoned`, `abandoning`, `abandons`
+  * `not_merged`: `not merged`, `not-merged`, `not-yet-merged`,
+    `not-merged-yet`, `un-merged`, `reverted`, `reverting`, `reverts`,
+    `abandoned`, `abandoning`, `abandons`
   * `no_op`: `no-op`, `no-ops`, `noops`, `no op`, `no operation`,
     `no operations`, `no change`, `no changes`, `no-changes`,
     `nothing changed`
@@ -154,8 +155,8 @@ exactly what the parser honors.
 
   Common morphological variants (verb forms `reverting`/`reverts`,
   `abandoning`/`abandons`; plurals `no-ops`, `no changes`, `no-changes`; and
-  the hyphenated compound `not-merged`) are recognized alongside the base
-  forms.
+  the hyphenated compounds `not-merged`, `not-yet-merged`,
+  `not-merged-yet`) are recognized alongside the base forms.
 
 * **The `not merged` phrase allows a bounded gap.** Natural phrasings of
   "wasn't merged" insert a word between `not` and `merged` (`yet`, `been`),

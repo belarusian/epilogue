@@ -663,3 +663,71 @@ def test_status_nothing_changed_plain_merged_regression() -> None:
         MergeStatus.NO_OP,
         MergeStatus.MERGED,
     ]
+
+
+# ---------------------------------------------------------------------------
+# Documentation consistency (TICKET-056)
+# ---------------------------------------------------------------------------
+
+
+def test_not_merged_markers_documented_in_readme_and_docstring() -> None:
+    """TICKET-056: every single-token NOT_MERGED marker in the code must be
+    present in BOTH the README.md not_merged list AND the parser module
+    docstring NOT_MERGED list. This reproduces the defect (fails before the
+    doc fix because not-yet-merged/not-merged-yet were absent from the docs)
+    and pins it (passes after)."""
+    from pathlib import Path
+
+    import epilogue.parser as parser_mod
+
+    # Extract single-token markers from the actual code table.
+    single_token_markers = [m[0] for m in parser_mod._NOT_MERGED_MARKERS if len(m) == 1]
+    assert single_token_markers, "expected at least one single-token NOT_MERGED marker"
+
+    # Read README.md from the repo root (relative to this test file).
+    repo_root = Path(__file__).resolve().parent.parent
+    readme_text = (repo_root / "README.md").read_text(encoding="utf-8")
+
+    # Extract the not_merged list block from README.
+    # It starts at the line containing '* `not_merged`:' and continues until
+    # the next bullet or blank line.
+    readme_lines = readme_text.splitlines()
+    readme_block_lines: list[str] = []
+    in_block = False
+    for line in readme_lines:
+        if "* `not_merged`:" in line:
+            in_block = True
+            readme_block_lines.append(line)
+            continue
+        if in_block:
+            if line.strip() == "" or line.lstrip().startswith("* "):
+                break
+            readme_block_lines.append(line)
+    readme_block = "\n".join(readme_block_lines)
+
+    # Read the parser module docstring.
+    docstring = parser_mod.__doc__ or ""
+    doc_lines = docstring.splitlines()
+    doc_block_lines: list[str] = []
+    in_block = False
+    for line in doc_lines:
+        if "``NOT_MERGED``:" in line:
+            in_block = True
+            doc_block_lines.append(line)
+            continue
+        if in_block:
+            if line.strip() == "" or line.lstrip().startswith("* "):
+                break
+            doc_block_lines.append(line)
+    doc_block = "\n".join(doc_block_lines)
+
+    # Assert each single-token marker appears in both documented lists.
+    for marker in single_token_markers:
+        assert marker in readme_block, (
+            f"single-token NOT_MERGED marker {marker!r} is missing from the "
+            f"README.md not_merged list"
+        )
+        assert marker in doc_block, (
+            f"single-token NOT_MERGED marker {marker!r} is missing from the "
+            f"parser module docstring NOT_MERGED list"
+        )
