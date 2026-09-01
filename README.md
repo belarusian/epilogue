@@ -144,8 +144,8 @@ exactly what the parser honors.
 
   * `not_merged`: `not merged`, `not-merged`, `un-merged`, `reverted`,
     `reverting`, `reverts`, `abandoned`, `abandoning`, `abandons`
-  * `no_op`: `no-op`, `no-ops`, `no op`, `no operation`, `no operations`,
-    `no change`, `no changes`
+  * `no_op`: `no-op`, `no-ops`, `noops`, `no op`, `no operation`,
+    `no operations`, `no change`, `no changes`
   * `merged`: the default when no `not_merged` or `no_op` marker matches.
 
   Common morphological variants (verb forms `reverting`/`reverts`,

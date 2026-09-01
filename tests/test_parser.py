@@ -570,3 +570,33 @@ def test_status_hyphenated_un_merged_existing_forms_unchanged() -> None:
 
     assert _infer_status("not-merged") is MergeStatus.NOT_MERGED
     assert _infer_status("not merged") is MergeStatus.NOT_MERGED
+
+
+# ---------------------------------------------------------------------------
+# Unseparated plural "noops" (TICKET-048)
+# ---------------------------------------------------------------------------
+
+
+def test_status_noops_unseparated_plural_recognized() -> None:
+    """TICKET-048 fix-pin: the unseparated plural 'noops' is a single token
+    (the tokenizer treats it as one run of [a-z0-9-]) and must classify NO_OP
+    (it fell through to the MERGED default before)."""
+    log = (
+        "## Cycle 1: N\n"
+        "- noops were recorded\n"
+    )
+    cycles = parse_log(log)
+    assert [e.status for e in cycles[0].entries] == [MergeStatus.NO_OP]
+
+
+def test_status_noops_token_boundary_regression() -> None:
+    """TICKET-048 regression guard: adding the 'noops' marker must NOT loosen
+    token boundaries. 'noops' embedded in a larger hyphenated token is one
+    token that equals no marker and stays MERGED, and a plain 'merged' line
+    stays MERGED (no over-match)."""
+    from epilogue.parser import _infer_status, _tokenize
+
+    assert _tokenize("noops") == ["noops"]
+    assert _infer_status("noops") is MergeStatus.NO_OP
+    assert _infer_status("the noops-detector shipped") is MergeStatus.MERGED
+    assert _infer_status("merged") is MergeStatus.MERGED
