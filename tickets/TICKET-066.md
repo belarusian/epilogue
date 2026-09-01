@@ -1,5 +1,5 @@
 # TICKET-066: README "Arguments:" list omits the `--status` flag
-**Status: OPEN (Cycle 26 audit).**
+**Status: CLOSED (Cycle 26, PR #29).** — fixed in the same PR that opened it: the `--status` bullet was added to the README "Arguments:" list and `[--status ...]` to the usage synopsis.
 
 ## Title
 The CLI defines six arguments, but the README "Arguments:" list under
