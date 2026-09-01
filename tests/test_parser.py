@@ -499,3 +499,41 @@ def test_status_hyphenated_not_merged_space_form_regression() -> None:
         MergeStatus.NOT_MERGED,
         MergeStatus.MERGED,
     ]
+
+
+def test_status_no_operation_full_word_recognized() -> None:
+    """TICKET-046: the full-word 'no operation' must classify as NO_OP (not
+    the MERGED default)."""
+    log = (
+        "## Cycle 1: H\n"
+        "- no operation\n"
+    )
+    cycles = parse_log(log)
+    assert [e.status for e in cycles[0].entries] == [MergeStatus.NO_OP]
+
+
+def test_status_no_operations_full_word_recognized() -> None:
+    """TICKET-046: the full-word plural 'no operations' must classify as NO_OP
+    (not the MERGED default)."""
+    log = (
+        "## Cycle 1: H\n"
+        "- no operations\n"
+    )
+    cycles = parse_log(log)
+    assert [e.status for e in cycles[0].entries] == [MergeStatus.NO_OP]
+
+
+def test_status_no_operation_compact_form_regression() -> None:
+    """TICKET-046 regression guard: the compact 'no-op' (TICKET-011/026) must
+    stay NO_OP and a plain 'merged' line must stay MERGED after adding the
+    full-word markers (no over-match)."""
+    log = (
+        "## Cycle 1: H\n"
+        "- no-op\n"
+        "- merged\n"
+    )
+    cycles = parse_log(log)
+    assert [e.status for e in cycles[0].entries] == [
+        MergeStatus.NO_OP,
+        MergeStatus.MERGED,
+    ]

@@ -75,6 +75,7 @@ description using **token-based** matching, not free substring matching.
     ``("reverted",)``, ``("reverting",)``, ``("reverts",)``,
     ``("abandoned",)``, ``("abandoning",)``, ``("abandons",)``
   * ``NO_OP``: ``("no-op",)``, ``("no-ops",)``, ``("no", "op")``,
+    ``("no", "operation")``, ``("no", "operations")``,
     ``("no", "change")``, ``("no", "changes")``
 
   Common morphological variants (verb forms ``reverting``/``reverts``,
@@ -146,6 +147,8 @@ _NO_OP_MARKERS: tuple[tuple[str, ...], ...] = (
     ("no-op",),
     ("no-ops",),
     ("no", "op"),
+    ("no", "operation"),
+    ("no", "operations"),
     ("no", "change"),
     ("no", "changes"),
 )
