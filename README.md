@@ -145,12 +145,13 @@ exactly what the parser honors.
   * `not_merged`: `not merged`, `not-merged`, `un-merged`, `reverted`,
     `reverting`, `reverts`, `abandoned`, `abandoning`, `abandons`
   * `no_op`: `no-op`, `no-ops`, `noops`, `no op`, `no operation`,
-    `no operations`, `no change`, `no changes`
+    `no operations`, `no change`, `no changes`, `no-changes`
   * `merged`: the default when no `not_merged` or `no_op` marker matches.
 
   Common morphological variants (verb forms `reverting`/`reverts`,
-  `abandoning`/`abandons`; plurals `no-ops`, `no changes`; and the hyphenated
-  compound `not-merged`) are recognized alongside the base forms.
+  `abandoning`/`abandons`; plurals `no-ops`, `no changes`, `no-changes`; and
+  the hyphenated compound `not-merged`) are recognized alongside the base
+  forms.
 
 * **The `not merged` phrase allows a bounded gap.** Natural phrasings of
   "wasn't merged" insert a word between `not` and `merged` (`yet`, `been`),

@@ -600,3 +600,33 @@ def test_status_noops_token_boundary_regression() -> None:
     assert _infer_status("noops") is MergeStatus.NO_OP
     assert _infer_status("the noops-detector shipped") is MergeStatus.MERGED
     assert _infer_status("merged") is MergeStatus.MERGED
+
+
+# ---------------------------------------------------------------------------
+# Hyphenated plural "no-changes" (TICKET-049)
+# ---------------------------------------------------------------------------
+
+
+def test_status_no_changes_hyphenated_plural_recognized() -> None:
+    """TICKET-049 fix-pin: the hyphenated plural 'no-changes' is a single
+    token (the tokenizer keeps the hyphen inside the token) and must classify
+    NO_OP (it fell through to the MERGED default before)."""
+    log = (
+        "## Cycle 1: N\n"
+        "- no-changes were recorded\n"
+    )
+    cycles = parse_log(log)
+    assert [e.status for e in cycles[0].entries] == [MergeStatus.NO_OP]
+
+
+def test_status_no_changes_token_boundary_regression() -> None:
+    """TICKET-049 regression guard: adding the 'no-changes' marker must NOT
+    loosen token boundaries. 'no-changes' embedded in a larger hyphenated
+    token is one token that equals no marker and stays MERGED, and a plain
+    'merged' line stays MERGED (no over-match)."""
+    from epilogue.parser import _infer_status, _tokenize
+
+    assert _tokenize("no-changes") == ["no-changes"]
+    assert _infer_status("no-changes") is MergeStatus.NO_OP
+    assert _infer_status("the no-changes-detector shipped") is MergeStatus.MERGED
+    assert _infer_status("merged") is MergeStatus.MERGED
