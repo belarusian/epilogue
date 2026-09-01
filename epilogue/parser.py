@@ -53,15 +53,35 @@ description using **token-based** matching, not free substring matching.
   description, i.e. ``re.findall(r"[a-z0-9-]+", description.lower())``.
   Punctuation such as ``:`` or ``.`` acts as a separator, but a hyphen is
   part of a token, so ``"abandoned-cart"`` is a single token and
-  ``"no-op"`` is a single token.
+  ``"no-op"`` is a single token. Two consequences of this character class
+  are pinned contracts:
+
+  * **Non-ASCII characters are dropped, not folded.** Accented letters, CJK,
+    emoji, and any other character outside ``[a-z0-9-]`` are silently removed
+    and act as separators. So ``"reverted\u00e9"`` tokenizes to
+    ``["reverted"]`` (matches ``NOT_MERGED``) while ``"abandon\u00e9"``
+    tokenizes to ``["abandon"]`` (no marker, ``MERGED``) — the outcome of the
+    same trailing character depends on whether the ASCII stem happens to be a
+    marker. This is intentional: the tokenizer never transliterates, so a
+    marker must appear with its exact ASCII spelling.
 * A **marker** is a tuple of tokens (a phrase). A marker matches only when
   its tokens occur as a **contiguous run** in the description's token list
   (in order, with no other tokens between them).
 * The marker sets (as token tuples) are:
 
-  * ``NOT_MERGED``: ``("not", "merged")``, ``("reverted",)``,
-    ``("abandoned",)``
-  * ``NO_OP``: ``("no-op",)``, ``("no", "op")``, ``("no", "change")``
+  * ``NOT_MERGED``: ``("not", "merged")``, ``("not-merged",)``,
+    ``("reverted",)``, ``("reverting",)``, ``("reverts",)``,
+    ``("abandoned",)``, ``("abandoning",)``, ``("abandons",)``
+  * ``NO_OP``: ``("no-op",)``, ``("no-ops",)``, ``("no", "op")``,
+    ``("no", "change")``, ``("no", "changes")``
+
+  Common morphological variants (verb forms ``reverting``/``reverts``,
+  ``abandoning``/``abandons``; plurals ``no-ops``, ``no changes``; and the
+  hyphenated compound ``not-merged``) are recognized alongside the base
+  forms. A variant is only recognized when it is a whole token: a marker
+  glued to a hyphen or digit on either side (``"no-op-"``, ``"-no-op"``,
+  ``"no--op"``, ``"no-op2"``, ``"reverted2"``) is one token that equals
+  none of the markers and therefore defaults to ``MERGED``.
 
 * Precedence is ``NOT_MERGED`` > ``NO_OP`` > ``MERGED`` (default). The
   ``MERGED`` status is the deterministic default when no ``NOT_MERGED`` or
@@ -100,13 +120,20 @@ _TOKEN_RE = re.compile(r"[a-z0-9-]+")
 # Documented in the module docstring.
 _NOT_MERGED_MARKERS: tuple[tuple[str, ...], ...] = (
     ("not", "merged"),
+    ("not-merged",),
     ("reverted",),
+    ("reverting",),
+    ("reverts",),
     ("abandoned",),
+    ("abandoning",),
+    ("abandons",),
 )
 _NO_OP_MARKERS: tuple[tuple[str, ...], ...] = (
     ("no-op",),
+    ("no-ops",),
     ("no", "op"),
     ("no", "change"),
+    ("no", "changes"),
 )
 
 

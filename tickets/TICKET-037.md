@@ -1,5 +1,7 @@
 # TICKET-037: Non-ASCII characters are silently dropped by the tokenizer, producing inconsistent status results
 
+**Status: CLOSED (Cycle 11, PR #15).** Documented + pinned: non-ASCII characters are dropped (not transliterated), so a marker matches only when its exact ASCII stem survives tokenizing. See parser docstring + README 'Status inference'; pinned by tests/test_parser.py::test_status_non_ascii_dropped_not_folded.
+
 ## Title
 The tokenizer regex `[a-z0-9-]+` matches only ASCII letters, digits, and
 hyphens. Any other character (accents, CJK, emoji, etc.) is silently dropped

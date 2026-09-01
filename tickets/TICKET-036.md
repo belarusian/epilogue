@@ -1,5 +1,7 @@
 # TICKET-036: Morphological variants of markers are not recognized (reverting, no-ops, no changes)
 
+**Status: CLOSED (Cycle 11, PR #15).** FIXED: morphological variants added to the marker tables (reverting/reverts, abandoning/abandons, no-ops, no changes, not-merged). Pinned by tests/test_parser.py::test_status_morphological_verb_forms_recognized, ::test_status_morphological_plural_forms_recognized, ::test_status_hyphenated_compound_not_merged_recognized; token boundaries preserved by ::test_status_morphological_variants_respect_token_boundary. README 'Status inference' updated.
+
 ## Title
 The status markers are exact, single-form tokens. Common morphological
 variants of the same concept — verb forms (`reverting`, `reverts`,
