@@ -4,10 +4,18 @@ This module provides the named CLI surface for the mission:
 
     epilogue --project <name> --from <n> --to <m> --log <path>
 
-It parses and validates its arguments, then reports that the core
-parse-to-render capability is still pending (a later Build phase). This is
-honest scaffolding: the CLI shell exists and is testable, but it does not
-pretend to render changelogs yet.
+It parses and validates its arguments, then runs the real parse-to-render
+pipeline: it reads the cycle log, parses it into cycles, filters to the
+requested ``--from``/``--to`` range, renders the changelog, and prints it to
+stdout.
+
+Exit-code contract (documented on :func:`main`):
+
+* ``0`` — successful render; the changelog is printed to stdout.
+* ``1`` — no cycles fall within the requested range; a clear message is
+  printed to stderr.
+* ``2`` — usage errors (missing/invalid arguments, an invalid cycle range, or
+  a missing log path), raised by argparse.
 
 The module is stdlib-only and fully typed.
 """
@@ -18,17 +26,8 @@ import argparse
 import sys
 from pathlib import Path
 
-# Distinct non-zero exit code for the "core capability pending" state.
-# Deliberately NOT 2: argparse reserves 2 for usage errors (missing/invalid
-# arguments, an invalid cycle range, a missing log path). Using a different
-# code keeps the pending-capability path distinguishable by exit code alone.
-PENDING_EXIT_CODE = 3
-
-PENDING_MESSAGE = (
-    "epilogue: core capability pending (Build phase). "
-    "Argument parsing and validation succeeded, but parse-to-render is not "
-    "implemented yet."
-)
+from epilogue.parser import parse_log
+from epilogue.render import render
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -81,10 +80,11 @@ def main(argv: list[str] | None = None) -> int:
             ``None``, ``sys.argv[1:]`` is used.
 
     Returns:
-        A process exit code. ``0`` on ``--help``; ``2`` for usage errors
+        A process exit code. ``0`` on a successful render (the changelog is
+        printed to stdout); ``1`` when no cycles fall within the requested
+        range (a clear message is printed to stderr); ``2`` for usage errors
         (missing/invalid arguments, an invalid cycle range, or a missing log
-        path); ``3`` for the pending-capability path (distinct from usage errors,
-        and also reported on stderr).
+        path), raised by argparse.
     """
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -98,7 +98,18 @@ def main(argv: list[str] | None = None) -> int:
     if not args.log.exists():
         parser.error(f"log path does not exist: {args.log}")
 
-    # Validation succeeded. The core parse-to-render capability is not yet
-    # implemented (a later Build phase), so report that honestly.
-    print(PENDING_MESSAGE, file=sys.stderr)
-    return PENDING_EXIT_CODE
+    text = args.log.read_text(encoding="utf-8")
+    cycles = parse_log(text)
+    selected = [c for c in cycles if args.from_cycle <= c.number <= args.to_cycle]
+
+    if not selected:
+        print(
+            f"epilogue: no cycles in range {args.from_cycle}..{args.to_cycle} "
+            f"in {args.log}",
+            file=sys.stderr,
+        )
+        return 1
+
+    out = render(selected, project=args.project)
+    print(out)
+    return 0
