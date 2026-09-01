@@ -72,8 +72,9 @@ description using **token-based** matching, not free substring matching.
 * The marker sets (as token tuples) are:
 
   * ``NOT_MERGED``: ``("not", "merged")``, ``("not-merged",)``,
-    ``("reverted",)``, ``("reverting",)``, ``("reverts",)``,
-    ``("abandoned",)``, ``("abandoning",)``, ``("abandons",)``
+    ``("un-merged",)``, ``("reverted",)``, ``("reverting",)``,
+    ``("reverts",)``, ``("abandoned",)``, ``("abandoning",)``,
+    ``("abandons",)``
   * ``NO_OP``: ``("no-op",)``, ``("no-ops",)``, ``("no", "op")``,
     ``("no", "operation")``, ``("no", "operations")``,
     ``("no", "change")``, ``("no", "changes")``
@@ -136,6 +137,7 @@ _NOT_MERGED_MARKERS: tuple[tuple[str, ...], ...] = (
     ("not-merged",),
     ("not-yet-merged",),
     ("not-merged-yet",),
+    ("un-merged",),
     ("reverted",),
     ("reverting",),
     ("reverts",),
