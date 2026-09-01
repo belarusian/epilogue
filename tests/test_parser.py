@@ -630,3 +630,36 @@ def test_status_no_changes_token_boundary_regression() -> None:
     assert _infer_status("no-changes") is MergeStatus.NO_OP
     assert _infer_status("the no-changes-detector shipped") is MergeStatus.MERGED
     assert _infer_status("merged") is MergeStatus.MERGED
+
+
+# ---------------------------------------------------------------------------
+# Multi-token phrase "nothing changed" (TICKET-050)
+# ---------------------------------------------------------------------------
+
+
+def test_status_nothing_changed_multi_token_recognized() -> None:
+    """TICKET-050: the two-token phrase 'nothing changed' must classify as
+    NO_OP (not the MERGED default). The tokenizer splits it into
+    ['nothing', 'changed'], so the marker is a two-token phrase -- the same
+    contract as the existing ('no', 'operation') entry."""
+    log = (
+        "## Cycle 1: H\n"
+        "- nothing changed\n"
+    )
+    cycles = parse_log(log)
+    assert [e.status for e in cycles[0].entries] == [MergeStatus.NO_OP]
+
+
+def test_status_nothing_changed_plain_merged_regression() -> None:
+    """TICKET-050 regression guard: adding the 'nothing changed' marker must
+    NOT over-match. A plain 'merged' line stays MERGED (no marker, default)."""
+    log = (
+        "## Cycle 1: H\n"
+        "- nothing changed\n"
+        "- merged\n"
+    )
+    cycles = parse_log(log)
+    assert [e.status for e in cycles[0].entries] == [
+        MergeStatus.NO_OP,
+        MergeStatus.MERGED,
+    ]
