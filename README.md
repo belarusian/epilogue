@@ -222,8 +222,6 @@ because it has no `not_merged` entry):
 
 ### Not Merged
 - Abandoned: the old approach
-
-
 ```
 
 And with `--format json`:
