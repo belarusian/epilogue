@@ -75,14 +75,14 @@ description using **token-based** matching, not free substring matching.
     ``("un-merged",)``, ``("reverted",)``, ``("reverting",)``,
     ``("reverts",)``, ``("abandoned",)``, ``("abandoning",)``,
     ``("abandons",)``
-  * ``NO_OP``: ``("no-op",)``, ``("no-ops",)``, ``("no", "op")``,
-    ``("no", "operation")``, ``("no", "operations")``,
+  * ``NO_OP``: ``("no-op",)``, ``("no-ops",)``, ``("noops",)``,
+    ``("no", "op")``, ``("no", "operation")``, ``("no", "operations")``,
     ``("no", "change")``, ``("no", "changes")``
 
   Common morphological variants (verb forms ``reverting``/``reverts``,
-  ``abandoning``/``abandons``; plurals ``no-ops``, ``no changes``; and the
-  hyphenated compound ``not-merged``) are recognized alongside the base
-  forms. A variant is only recognized when it is a whole token: a marker
+  ``abandoning``/``abandons``; plurals ``no-ops``, ``noops``, ``no changes``;
+  and the hyphenated compound ``not-merged``) are recognized alongside the
+  base forms. A variant is only recognized when it is a whole token: a marker
   glued to a hyphen or digit on either side (``"no-op-"``, ``"-no-op"``,
   ``"no--op"``, ``"no-op2"``, ``"reverted2"``) is one token that equals
   none of the markers and therefore defaults to ``MERGED``.
@@ -148,6 +148,7 @@ _NOT_MERGED_MARKERS: tuple[tuple[str, ...], ...] = (
 _NO_OP_MARKERS: tuple[tuple[str, ...], ...] = (
     ("no-op",),
     ("no-ops",),
+    ("noops",),
     ("no", "op"),
     ("no", "operation"),
     ("no", "operations"),
