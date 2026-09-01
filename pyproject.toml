@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "epilogue"
+version = "0.1.0"
+description = "Render release-note-style changelogs from a project cycle log (stdlib only)."
+requires-python = ">=3.10"
+# Bootstrap cycle: stdlib only. No runtime dependencies.
+dependencies = []
+
+# No console-script entry point yet — the CLI is a later build cycle.
+
+[tool.setuptools]
+packages = ["epilogue"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.mypy]
+python_version = "3.10"

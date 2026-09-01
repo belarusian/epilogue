@@ -1,0 +1,12 @@
+# Python bytecode / caches
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Project artifacts
+trajectories/
+build/
+dist/
+*.egg-info/
