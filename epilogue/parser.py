@@ -26,23 +26,35 @@ non-blank lines (no bullet) are used as-is. Blank lines are skipped.
 Status inference (truthful, deterministic)
 ------------------------------------------
 Each entry's :class:`~epilogue.model.MergeStatus` is inferred from its
-description using a fixed, case-insensitive substring match against the
-marker sets below. Precedence is ``NOT_MERGED`` > ``NO_OP`` > ``MERGED``
-(default). The exact marker set is:
+description using **token-based** matching, not free substring matching.
 
-* ``NOT_MERGED`` markers (any one present -> ``NOT_MERGED``):
-    - ``"not merged"``
-    - ``"reverted"``
-    - ``"abandoned"``
-* ``NO_OP`` markers (any one present -> ``NO_OP``):
-    - ``"no-op"``   (also matches ``"no-op:"``)
-    - ``"no change"``
-* ``MERGED``: the default when no ``NOT_MERGED`` or ``NO_OP`` marker is
-  present.
+* A **token** is a maximal run of ``[a-z0-9-]`` in the lowercased
+  description, i.e. ``re.findall(r"[a-z0-9-]+", description.lower())``.
+  Punctuation such as ``:`` or ``.`` acts as a separator, but a hyphen is
+  part of a token, so ``"abandoned-cart"`` is a single token and
+  ``"no-op"`` is a single token.
+* A **marker** is a tuple of tokens (a phrase). A marker matches only when
+  its tokens occur as a **contiguous run** in the description's token list
+  (in order, with no other tokens between them).
+* The marker sets (as token tuples) are:
 
-Because matching is a case-insensitive substring test, ``"NOT MERGED"``,
-``"Not Merged"``, ``"reverted"``, ``"abandoned"``, ``"no-op"``,
-``"no-op:"``, and ``"no change"`` all classify deterministically.
+  * ``NOT_MERGED``: ``("not", "merged")``, ``("reverted",)``,
+    ``("abandoned",)``
+  * ``NO_OP``: ``("no-op",)``, ``("no", "op")``, ``("no", "change")``
+
+* Precedence is ``NOT_MERGED`` > ``NO_OP`` > ``MERGED`` (default). The
+  ``MERGED`` status is the deterministic default when no ``NOT_MERGED`` or
+  ``NO_OP`` marker matches.
+
+Because matching is token-based and requires a contiguous run, a marker word
+embedded inside a larger hyphenated word does **not** trigger. For example,
+``"shipped the abandoned-cart feature"`` tokenizes to
+``["shipped", "the", "abandoned-cart", "feature"]``; the ``("abandoned",)``
+marker does not match because ``"abandoned-cart"`` is one token, not
+``"abandoned"``. Likewise ``"added a no-op detector"`` tokenizes to
+``["added", "a", "no-op", "detector"]`` and the ``("no-op",)`` marker
+matches, so it classifies as ``NO_OP``. Matching is case-insensitive (the
+description is lowercased before tokenizing).
 """
 
 from __future__ import annotations
@@ -58,10 +70,23 @@ _CYCLE_HEADER_RE = re.compile(r"^##\s+Cycle\s+(\d+)\s*:\s*(.*)$")
 # Bullet prefixes stripped from line items.
 _BULLET_PREFIXES = ("- ", "* ")
 
-# Deterministic, case-insensitive status markers. Precedence is
-# NOT_MERGED > NO_OP > MERGED (default). Documented in the module docstring.
-_NOT_MERGED_MARKERS = ("not merged", "reverted", "abandoned")
-_NO_OP_MARKERS = ("no-op", "no change")
+# A token is a maximal run of [a-z0-9-] in the lowercased description.
+_TOKEN_RE = re.compile(r"[a-z0-9-]+")
+
+# Deterministic, token-based status markers. Each marker is a tuple of
+# tokens (a phrase) that must occur as a contiguous run in the description's
+# token list. Precedence is NOT_MERGED > NO_OP > MERGED (default).
+# Documented in the module docstring.
+_NOT_MERGED_MARKERS: tuple[tuple[str, ...], ...] = (
+    ("not", "merged"),
+    ("reverted",),
+    ("abandoned",),
+)
+_NO_OP_MARKERS: tuple[tuple[str, ...], ...] = (
+    ("no-op",),
+    ("no", "op"),
+    ("no", "change"),
+)
 
 
 def _strip_bullet(line: str) -> str:
@@ -77,18 +102,43 @@ def _strip_bullet(line: str) -> str:
     return stripped
 
 
+def _tokenize(description: str) -> list[str]:
+    """Return the list of tokens in a lowercased description.
+
+    A token is a maximal run of ``[a-z0-9-]``; punctuation (e.g. ``:``)
+    separates tokens, while a hyphen is part of a token.
+    """
+    return _TOKEN_RE.findall(description.lower())
+
+
+def _has_contiguous_run(tokens: list[str], marker: tuple[str, ...]) -> bool:
+    """Return True if ``marker`` occurs as a contiguous run in ``tokens``.
+
+    The marker's tokens must appear in order with no other tokens between
+    them. A marker longer than the token list can never match.
+    """
+    marker_len = len(marker)
+    if marker_len == 0 or marker_len > len(tokens):
+        return False
+    for i in range(len(tokens) - marker_len + 1):
+        if tuple(tokens[i:i + marker_len]) == marker:
+            return True
+    return False
+
+
 def _infer_status(description: str) -> MergeStatus:
     """Infer the truthful :class:`MergeStatus` from a description.
 
-    Uses a case-insensitive substring match against the documented marker
-    sets with precedence ``NOT_MERGED`` > ``NO_OP`` > ``MERGED``.
+    Uses token-based, contiguous-run matching against the documented marker
+    sets with precedence ``NOT_MERGED`` > ``NO_OP`` > ``MERGED``. A marker
+    word embedded inside a larger hyphenated token does not trigger.
     """
-    lowered = description.lower()
+    tokens = _tokenize(description)
     for marker in _NOT_MERGED_MARKERS:
-        if marker in lowered:
+        if _has_contiguous_run(tokens, marker):
             return MergeStatus.NOT_MERGED
     for marker in _NO_OP_MARKERS:
-        if marker in lowered:
+        if _has_contiguous_run(tokens, marker):
             return MergeStatus.NO_OP
     return MergeStatus.MERGED
 
