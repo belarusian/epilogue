@@ -100,6 +100,52 @@ prints to stdout:
 
 The convention: the `# <project>` title is followed immediately by the first cycle header (no blank line); a blank line follows each cycle header; the status sub-sections (`### Merged`, `### No-ops`, `### Not Merged`) are emitted only when non-empty and are not separated by blank lines within a cycle; a blank line separates consecutive cycles. The three statuses stay truthfully distinguishable.
 
+## Status filter
+
+Pass `--status {merged,no_op,not_merged}` to render only the entries with
+that single `MergeStatus`. The selector composes with the range
+filter (`--from`/`--to`): the range selects WHICH cycles, the status
+selects WHICH entries within them. It applies to both the `text` and
+`json` output formats. When omitted (the default), all entries are
+rendered, so existing invocations are unchanged.
+
+Given the same `log.md` as the examples above, running:
+
+```console
+python -m epilogue --project demo --from 1 --to 2 --log log.md --status not_merged
+```
+
+prints to stdout (only the `not_merged` entry survives; cycle 1 is dropped
+because it has no `not_merged` entry):
+
+```text
+# demo
+## Cycle 2: Build
+
+### Not Merged
+- Abandoned: the old approach
+
+
+```
+
+And with `--format json`:
+
+```console
+python -m epilogue --project demo --from 1 --to 2 --log log.md --format json --status no_op
+```
+
+prints to stdout (a single-line JSON document with only the `no_op` entry):
+
+```json
+{"project": "demo", "cycles": [{"number": 2, "title": "Build", "entries": [{"description": "No-op: nothing changed", "status": "no_op"}]}]}
+```
+
+Exit codes: `0` when at least one cycle with a matching entry is rendered;
+`1` when no cycles fall in the range, or when cycles fall in the range but
+none of them has an entry of the requested status (a clear message is
+printed to stderr, for both formats); `2` for usage errors (including an
+invalid `--status` value).
+
 ## Machine-readable output
 
 Pass `--format json` to emit a machine-readable document instead of the

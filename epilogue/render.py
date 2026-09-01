@@ -36,6 +36,13 @@ The three statuses are kept TRUTHFULLY distinguishable in the output: a
 reader can tell ``MERGED`` from ``NO_OP`` from ``NOT_MERGED`` at a glance,
 because each lands under its own labeled sub-section. They are never
 collapsed.
+
+Status selector
+---------------
+:func:`filter_by_status(cycles, status)` is a pure, stdlib-only selector
+that returns a NEW list of NEW :class:`Cycle` objects containing only the
+entries whose ``status is status``; cycles with no matching entry are
+dropped. It never mutates its input and never raises.
 """
 
 from __future__ import annotations
@@ -140,3 +147,33 @@ def render_json(cycles: list[Cycle], *, project: str | None = None) -> str:
         for cycle in cycles
     ]
     return json.dumps(doc)
+
+
+def filter_by_status(cycles: list[Cycle], status: MergeStatus) -> list[Cycle]:
+    """Filter a list of :class:`Cycle` down to entries of one :class:`MergeStatus`.
+
+    This is a pure, stdlib-only, fully-typed selector: it returns a NEW list of
+    NEW :class:`Cycle` objects and never mutates the input list or its cycles.
+    Each returned cycle keeps its ``number`` and ``title`` but contains ONLY the
+    entries whose ``entry.status is status``. Any cycle with zero matching
+    entries is dropped entirely. Cycle order and, within a cycle, entry order
+    are preserved.
+
+    Args:
+        cycles: The cycles to filter, in the order they should appear.
+        status: The single :class:`MergeStatus` to keep.
+
+    Returns:
+        A new list of new :class:`Cycle` objects holding only the matching
+        entries, with cycles that have no matching entry dropped. An empty
+        ``cycles`` input returns ``[]``. It never raises.
+    """
+    result: list[Cycle] = []
+    for cycle in cycles:
+        matching = [entry for entry in cycle.entries if entry.status is status]
+        if not matching:
+            continue
+        result.append(
+            Cycle(number=cycle.number, title=cycle.title, entries=matching)
+        )
+    return result
