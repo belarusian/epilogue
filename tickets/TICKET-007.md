@@ -15,3 +15,6 @@ The package cannot be run as a module; `python -m epilogue` fails with
 ## Suggestion
 Create `epilogue/__main__.py` containing `sys.exit(main())` (importing `main`
 from `epilogue.cli`) so `python -m epilogue` works.
+
+---
+Status: CLOSED (Cycle 2, PR #2, merged 3dde27a)

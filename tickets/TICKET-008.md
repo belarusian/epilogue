@@ -14,3 +14,6 @@ console command.
 ## Suggestion
 Add `[project.scripts] epilogue = "epilogue.cli:main"` to `pyproject.toml`.
 Keep the package stdlib-only (no new runtime deps).
+
+---
+Status: CLOSED (Cycle 2, PR #2, merged 3dde27a)

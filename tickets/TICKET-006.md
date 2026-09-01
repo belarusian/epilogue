@@ -22,3 +22,6 @@ because `from` is a keyword), `--to` (int, required), `--log` (path, required).
 Validate `from_cycle <= to_cycle` and the log path's existence. After validation,
 print a clear "core capability pending (Build phase)" message to stderr and return
 a distinct non-zero exit code (e.g. 2). Honest scaffolding, not fake progress.
+
+---
+Status: CLOSED (Cycle 2, PR #2, merged 3dde27a)

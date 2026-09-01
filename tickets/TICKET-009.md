@@ -16,3 +16,6 @@ Create `tests/test_cli.py` covering: `--help` (exit 0), missing required args
 (non-zero), an invalid range `from > to` (non-zero), a missing log path
 (non-zero), and the pending-capability path (the distinct exit code + the stderr
 message). Keep every existing test green.
+
+---
+Status: CLOSED (Cycle 2, PR #2, merged 3dde27a)

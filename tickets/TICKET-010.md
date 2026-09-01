@@ -15,3 +15,6 @@ gate, or the (still-pending) CLI usage.
 ## Suggestion
 Add short "Structure", "The gate", and "Usage" sections documenting the package
 layout, how to run the gate, and the (still-pending) CLI usage.
+
+---
+Status: CLOSED (Cycle 2, PR #2, merged 3dde27a)
