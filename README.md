@@ -100,6 +100,38 @@ prints to stdout:
 
 The convention: the `# <project>` title is followed immediately by the first cycle header (no blank line); a blank line follows each cycle header; the status sub-sections (`### Merged`, `### No-ops`, `### Not Merged`) are emitted only when non-empty and are not separated by blank lines within a cycle; a blank line separates consecutive cycles. The three statuses stay truthfully distinguishable.
 
+## Status inference
+
+The parser classifies each log entry into one of the three `MergeStatus`
+values (`merged`, `no_op`, `not_merged`) using a deterministic, **token-based**
+rule so that the three-way distinction stays truthful. Log authors should know
+exactly what the parser honors.
+
+* A **token** is a maximal run of `[a-z0-9-]` in the lowercased description.
+  Punctuation such as `:` or `.` separates tokens, but a hyphen is part of a
+  token, so `abandoned-cart` is a single token and `no-op` is a single token.
+* A **marker** is a phrase (a tuple of tokens). A marker matches only when its
+  tokens occur as a **contiguous run** in the description's token list, in
+  order, with no other tokens between them. Matching is case-insensitive.
+* The marker phrases are:
+
+  * `not_merged`: `not merged`, `reverted`, `abandoned`
+  * `no_op`: `no-op`, `no op`, `no change`
+  * `merged`: the default when no `not_merged` or `no_op` marker matches.
+
+* Precedence is `not_merged` > `no_op` > `merged` (default).
+
+Because matching is token-based and requires a contiguous run, a marker word
+embedded inside a larger hyphenated word does **not** trigger. For example,
+`shipped the abandoned-cart feature` tokenizes to
+`[shipped, the, abandoned-cart, feature]`; the `abandoned` marker does not
+match because `abandoned-cart` is one token, so the entry is `merged`. In
+contrast, `abandoned the renderer` tokenizes to
+`[abandoned, the, renderer]` and the `abandoned` marker matches, so the entry
+is `not_merged`. Likewise `added a no-op detector` is `no_op` (the `no-op`
+token matches), while `no op: nothing changed` is also `no_op` (the `no op`
+phrase matches).
+
 ## Status filter
 
 Pass `--status {merged,no_op,not_merged}` to render only the entries with

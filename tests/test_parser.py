@@ -125,3 +125,68 @@ def test_status_case_insensitive() -> None:
         MergeStatus.NO_OP,
         MergeStatus.NO_OP,
     ]
+
+
+def test_status_token_boundary_hyphenated_word_not_merged() -> None:
+    """A marker word embedded in a larger hyphenated token does NOT trigger.
+
+    'abandoned-cart' is a single token, so the ('abandoned',) marker does not
+    match and the entry classifies as MERGED.
+    """
+    log = "## Cycle 1: B\n- shipped the abandoned-cart feature\n"
+    cycles = parse_log(log)
+    assert cycles[0].entries == [
+        Entry(description="shipped the abandoned-cart feature", status=MergeStatus.MERGED)
+    ]
+
+
+def test_status_no_op_hyphenated_token() -> None:
+    """'no-op' is a single token and matches the ('no-op',) marker -> NO_OP."""
+    log = "## Cycle 1: B\n- added a no-op detector\n"
+    cycles = parse_log(log)
+    assert cycles[0].entries == [
+        Entry(description="added a no-op detector", status=MergeStatus.NO_OP)
+    ]
+
+
+def test_status_no_op_space_form() -> None:
+    """'no op' (space form) matches the ('no', 'op') marker -> NO_OP."""
+    log = "## Cycle 1: B\n- no op: nothing changed\n"
+    cycles = parse_log(log)
+    assert cycles[0].entries == [
+        Entry(description="no op: nothing changed", status=MergeStatus.NO_OP)
+    ]
+
+
+def test_status_reverted_token() -> None:
+    """'reverted' as a standalone token matches -> NOT_MERGED."""
+    log = "## Cycle 1: B\n- reverted the change\n"
+    cycles = parse_log(log)
+    assert cycles[0].entries == [
+        Entry(description="reverted the change", status=MergeStatus.NOT_MERGED)
+    ]
+
+
+def test_status_not_merged_phrase() -> None:
+    """'not merged' as a contiguous token run matches -> NOT_MERGED."""
+    log = "## Cycle 1: B\n- not merged yet\n"
+    cycles = parse_log(log)
+    assert cycles[0].entries == [
+        Entry(description="not merged yet", status=MergeStatus.NOT_MERGED)
+    ]
+
+
+def test_status_genuine_markers_still_work() -> None:
+    """The genuine markers still classify correctly under token matching."""
+    log = (
+        "## Cycle 1: B\n"
+        "- no-op: nothing changed\n"
+        "- abandoned the renderer\n"
+        "- no change in output\n"
+    )
+    cycles = parse_log(log)
+    assert cycles[0].entries == [
+        Entry(description="no-op: nothing changed", status=MergeStatus.NO_OP),
+        Entry(description="abandoned the renderer", status=MergeStatus.NOT_MERGED),
+        Entry(description="no change in output", status=MergeStatus.NO_OP),
+    ]
