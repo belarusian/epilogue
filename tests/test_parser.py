@@ -537,3 +537,36 @@ def test_status_no_operation_compact_form_regression() -> None:
         MergeStatus.NO_OP,
         MergeStatus.MERGED,
     ]
+
+
+# ---------------------------------------------------------------------------
+# Hyphenated single-word synonym "un-merged" (TICKET-047)
+# ---------------------------------------------------------------------------
+
+
+def test_status_hyphenated_un_merged_recognized() -> None:
+    """TICKET-047 fix-pin: the hyphenated single-word synonym 'un-merged' is a
+    single token (the tokenizer treats the hyphen as part of the token) and
+    must classify NOT_MERGED (it fell through to MERGED before)."""
+    from epilogue.parser import _infer_status, _tokenize
+
+    assert _tokenize("un-merged") == ["un-merged"]
+    assert _infer_status("un-merged") is MergeStatus.NOT_MERGED
+
+
+def test_status_hyphenated_un_merged_plain_merged_regression() -> None:
+    """TICKET-047 regression guard: adding the 'un-merged' marker must NOT
+    over-match. A plain 'merged' line stays MERGED (no marker, default)."""
+    from epilogue.parser import _infer_status
+
+    assert _infer_status("merged") is MergeStatus.MERGED
+
+
+def test_status_hyphenated_un_merged_existing_forms_unchanged() -> None:
+    """TICKET-047: the existing NOT_MERGED forms are unchanged after adding
+    'un-merged'. The hyphenated compound 'not-merged' (single token) and the
+    two-word phrase 'not merged' both still classify NOT_MERGED."""
+    from epilogue.parser import _infer_status
+
+    assert _infer_status("not-merged") is MergeStatus.NOT_MERGED
+    assert _infer_status("not merged") is MergeStatus.NOT_MERGED

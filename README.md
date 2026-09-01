@@ -142,8 +142,8 @@ exactly what the parser honors.
   tokens (see the next bullet). Matching is case-insensitive.
 * The marker phrases are:
 
-  * `not_merged`: `not merged`, `not-merged`, `reverted`, `reverting`,
-    `reverts`, `abandoned`, `abandoning`, `abandons`
+  * `not_merged`: `not merged`, `not-merged`, `un-merged`, `reverted`,
+    `reverting`, `reverts`, `abandoned`, `abandoning`, `abandons`
   * `no_op`: `no-op`, `no-ops`, `no op`, `no operation`, `no operations`,
     `no change`, `no changes`
   * `merged`: the default when no `not_merged` or `no_op` marker matches.
