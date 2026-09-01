@@ -72,6 +72,7 @@ description using **token-based** matching, not free substring matching.
 * The marker sets (as token tuples) are:
 
   * ``NOT_MERGED``: ``("not", "merged")``, ``("not-merged",)``,
+    ``("not-yet-merged",)``, ``("not-merged-yet",)``,
     ``("un-merged",)``, ``("reverted",)``, ``("reverting",)``,
     ``("reverts",)``, ``("abandoned",)``, ``("abandoning",)``,
     ``("abandons",)``
@@ -82,7 +83,8 @@ description using **token-based** matching, not free substring matching.
 
   Common morphological variants (verb forms ``reverting``/``reverts``,
   ``abandoning``/``abandons``; plurals ``no-ops``, ``noops``, ``no changes``,
-  ``no-changes``; and the hyphenated compound ``not-merged``) are recognized
+  ``no-changes``; and the hyphenated compounds ``not-merged``,
+  ``not-yet-merged``, ``not-merged-yet``) are recognized
   alongside the base forms. A variant is only recognized when it is a whole
   token: a marker glued to a hyphen or digit on either side (``"no-op-"``,
   ``"-no-op"``, ``"no--op"``, ``"no-op2"``, ``"reverted2"``) is one token
