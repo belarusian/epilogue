@@ -1,6 +1,6 @@
 # TICKET-069
 
-Status: OPEN
+Status: CLOSED
 Priority: P2
 Type: README drift (documentation vs code)
 Module: README.md ("Status filter" section)
