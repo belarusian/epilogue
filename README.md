@@ -173,6 +173,14 @@ exactly what the parser honors.
 
 * Precedence is `not_merged` > `no_op` > `merged` (default).
 
+* **Multi-marker entries keep their second marker.** When a description
+  carries markers of *both* `not_merged` and `no_op`, the entry's primary
+  `status` is still chosen by the precedence rule above (`not_merged` wins),
+  but the other class is no longer silently discarded: it is recorded on the
+  entry's `secondary_status` field (`None` for the common single-class case).
+  This is additive and never changes the primary `status`. For example,
+  `reverted the no-op` is `status=not_merged` with `secondary_status=no_op`.
+
 Because matching is token-based and requires a contiguous run, a marker word
 embedded inside a larger hyphenated word does **not** trigger. For example,
 `shipped the abandoned-cart feature` tokenizes to

@@ -34,11 +34,20 @@ class Entry:
 
     Attributes:
         description: Human-readable description of what the entry did.
-        status: The truthful merge classification of the entry.
+        status: The truthful merge classification of the entry (the primary
+            status, chosen by the documented precedence
+            ``NOT_MERGED`` > ``NO_OP`` > ``MERGED``).
+        secondary_status: When the description carries markers of more than
+            one status class, the primary ``status`` is still chosen by the
+            precedence rule, but the *other* class is no longer silently
+            dropped: it is recorded here. ``None`` when the description
+            carries at most one status class (the common case). This is
+            additive and never changes ``status``.
     """
 
     description: str
     status: MergeStatus
+    secondary_status: MergeStatus | None = None
 
 
 @dataclass
