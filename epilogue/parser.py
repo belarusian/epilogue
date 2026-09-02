@@ -73,13 +73,13 @@ description using **token-based** matching, not free substring matching.
 
   * ``NOT_MERGED``: ``("not", "merged")``, ``("not-merged",)``,
     ``("not-yet-merged",)``, ``("not-merged-yet",)``,
-    ``("un-merged",)``, ``("reverted",)``, ``("reverting",)``,
-    ``("reverts",)``, ``("abandoned",)``, ``("abandoning",)``,
+    ``("un-merged",)``, ``("unmerged",)``, ``("reverted",)``,
+    ``("reverting",)``, ``("reverts",)``, ``("revert",)``, ``("abandoned",)``, ``("abandoning",)``,
     ``("abandons",)``
   * ``NO_OP``: ``("no-op",)``, ``("no-ops",)``, ``("noops",)``,
-    ``("no", "op")``, ``("no", "operation")``, ``("no", "operations")``,
-    ``("no", "change")``, ``("no", "changes")``, ``("no-changes",)``,
-    ``("nothing", "changed")``
+    ``("no", "op")``, ``("no", "ops")``, ``("no", "operation")``,
+    ``("no", "operations")``, ``("no", "change")``, ``("no", "changes")``,
+    ``("no-change",)``, ``("no-changes",)``, ``("nothing", "changed")``
 
   Common morphological variants (verb forms ``reverting``/``reverts``,
   ``abandoning``/``abandons``; plurals ``no-ops``, ``noops``, ``no changes``,
@@ -141,9 +141,11 @@ _NOT_MERGED_MARKERS: tuple[tuple[str, ...], ...] = (
     ("not-yet-merged",),
     ("not-merged-yet",),
     ("un-merged",),
+    ("unmerged",),
     ("reverted",),
     ("reverting",),
     ("reverts",),
+    ("revert",),
     ("abandoned",),
     ("abandoning",),
     ("abandons",),
@@ -152,11 +154,14 @@ _NO_OP_MARKERS: tuple[tuple[str, ...], ...] = (
     ("no-op",),
     ("no-ops",),
     ("noops",),
+    ("noop",),
     ("no", "op"),
+    ("no", "ops"),
     ("no", "operation"),
     ("no", "operations"),
     ("no", "change"),
     ("no", "changes"),
+    ("no-change",),
     ("no-changes",),
     ("nothing", "changed"),
 )
