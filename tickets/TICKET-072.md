@@ -70,3 +70,5 @@ phrases, the bounded-gap rule, the token-boundary rule, or the explicit
   hatch and is unaffected.
 Issue: #78
 Issue: #107
+
+Status: CLOSED (Cycle 49, PR #108, merged b99b9d5; Issue: #107). The abandon clause of contract A was deliberately amended: base/imperative 'abandon' is now a NOT_MERGED marker.

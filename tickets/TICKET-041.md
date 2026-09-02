@@ -63,4 +63,4 @@ Either way, add tests in `tests/test_parser.py` covering `revert` and `abandon`
 so the contract is pinned by the gate.
 Issue: #78
 
-Status: OPEN (Issue: #78; contract-blocked until the deliberate contract-A redesign cycle)
+Status: CLOSED (Cycle 49, PR #108, merged b99b9d5; Issue: #78). The base/imperative 'abandon' form is now a NOT_MERGED marker via the deliberate contract-A redesign (TICKET-072). 'revert' was already correct (NOT_MERGED) and is unchanged.
