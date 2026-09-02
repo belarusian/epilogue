@@ -15,4 +15,5 @@ Missing `tests/` directory and all test modules; pytest collects nothing.
 - The mission requirement "at least one honest passing test per module" is unmet for all modules (which don't yet exist — see TICKET-001).
 
 ## Suggestion
-Create:Issue: #38
+Create:
+Issue: #38

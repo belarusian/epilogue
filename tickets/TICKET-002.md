@@ -16,4 +16,5 @@ Missing `pyproject.toml` at repo root; no build system, entry point, or tool con
 - The `epilogue` console-script entry point does not exist, so users must rely on `python -m epilogue`.
 
 ## Suggestion
-Create `pyproject.toml` with at minimum:Issue: #37
+Create `pyproject.toml` with at minimum:
+Issue: #37

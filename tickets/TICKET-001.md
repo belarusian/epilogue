@@ -16,4 +16,5 @@ Missing package directory, `__init__.py`, and module structure for the epilogue 
 - Downstream tickets (tests, CI, packaging) are blocked until a package skeleton exists.
 
 ## Suggestion
-Create the following layout:Issue: #36
+Create the following layout:
+Issue: #36
