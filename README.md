@@ -150,11 +150,11 @@ exactly what the parser honors.
 * The marker phrases are:
 
   * `not_merged`: `not merged`, `not-merged`, `not-yet-merged`,
-    `not-merged-yet`, `un-merged`, `reverted`, `reverting`, `reverts`,
-    `abandoned`, `abandoning`, `abandons`
-  * `no_op`: `no-op`, `no-ops`, `noops`, `no op`, `no operation`,
-    `no operations`, `no change`, `no changes`, `no-changes`,
-    `nothing changed`
+    `not-merged-yet`, `un-merged`, `unmerged`, `reverted`, `reverting`,
+    `reverts`, `revert`, `abandoned`, `abandoning`, `abandons`
+  * `no_op`: `no-op`, `no-ops`, `noops`, `noop`, `no op`, `no ops`,
+    `no operation`, `no operations`, `no change`, `no changes`,
+    `no-change`, `no-changes`, `nothing changed`
   * `merged`: the default when no `not_merged` or `no_op` marker matches.
 
   Common morphological variants (verb forms `reverting`/`reverts`,
