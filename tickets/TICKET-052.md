@@ -39,3 +39,5 @@ Give I/O failure its own, documented exit code. The cleanest fit is `2` (a
 once TICKET-051's guard is in place. Update the `cli.py` module docstring and the
 README "Exit codes" sections to state that an unreadable / non-UTF-8 / directory
 log is a usage error (exit `2`). Add a test asserting the exit code (TICKET-055).
+
+Issue: #85

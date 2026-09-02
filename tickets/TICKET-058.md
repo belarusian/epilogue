@@ -58,3 +58,5 @@ Options:
    'abandoned') for unambiguous NOT_MERGED entries."
 
 Option 1 is the best balance of precision and simplicity.
+
+Issue: #91

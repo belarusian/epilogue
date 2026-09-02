@@ -68,3 +68,5 @@ Options:
 Option 1 is the simplest and most predictable: a log author who writes
 "no change" as the entire entry gets NO_OP; a log author who writes
 "confirmed no change needed" gets MERGED.
+
+Issue: #92

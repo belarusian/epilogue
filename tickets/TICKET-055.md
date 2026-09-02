@@ -47,3 +47,5 @@ Add tests in `tests/test_cli.py` (using `tmp_path` and `capsys`):
   as root).
 These tests should assert the exit code chosen when TICKET-052 is resolved and
 should fail (red) against the current code, documenting the gap.
+
+Issue: #88

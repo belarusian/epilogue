@@ -49,3 +49,5 @@ mention the hyphenated `not-yet-merged` / `not-merged-yet` forms alongside
 the existing `not-merged` mention.
 
 **Status: CLOSED (Cycle 22, PR #25).**
+
+Issue: #89

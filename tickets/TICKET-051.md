@@ -48,3 +48,5 @@ with `args.log.is_file()` so a directory is a clean usage error (exit `2`) — a
 (b) wrap `read_text` in a `try/except (OSError, UnicodeDecodeError)` that calls
 `parser.error(...)` (exit `2`) with a clear message such as
 `"cannot read log <path>: <reason>"`. Add a test per case (see TICKET-055).
+
+Issue: #84

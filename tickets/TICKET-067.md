@@ -31,3 +31,5 @@ point end-to-end as a subprocess) is missing from the tree.
   "## Structure"), describing it as the `python -m epilogue` entry-point
   (subprocess) tests.
 - No code change; documentation only.
+
+Issue: #100

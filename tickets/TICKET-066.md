@@ -33,3 +33,5 @@ canonical argument list cannot discover the status selector from that list
 - Optionally add `[--status {merged,no_op,not_merged}]` to the usage line
   (line 44) so the one-line synopsis matches the real CLI.
 - No code change; documentation only.
+
+Issue: #99

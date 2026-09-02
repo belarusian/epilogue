@@ -51,3 +51,5 @@ TICKET-062, TICKET-063) — the SAME code as "no cycles in range".
 - (If a new code is not desired, the minimum fix is to make I/O failures print
   a clean message; but the collision with exit 1 remains, so a distinct code is
   the correct fix.)
+
+Issue: #97

@@ -40,3 +40,5 @@ message to stderr, then return a distinct exit code (see TICKET-064):
 Note `UnicodeDecodeError` is a `ValueError`, not an `OSError`, so it needs its
 own handler (or a combined `except (OSError, UnicodeDecodeError)` — see
 TICKET-063).
+
+Issue: #95

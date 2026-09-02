@@ -37,3 +37,5 @@ exists but cannot be read (directory, invalid UTF-8, unreadable), and
   since root bypasses the permission check.
 - Update `README.md` and the `epilogue/cli.py` docstrings to document the
   I/O-failure exit code (see TICKET-064) so the contract matches the code.
+
+Issue: #98

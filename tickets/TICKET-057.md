@@ -54,3 +54,5 @@ Options (pick one, document the choice):
 
 Option 3 is the lowest-risk: it does not change behavior, only documents the
 existing contract so log authors can avoid the footgun.
+
+Issue: #90

@@ -41,3 +41,5 @@ block. No code change; README-only.
 After the fix, the block's content (between the fences) must equal the actual
 CLI stdout for the documented invocation, byte-for-byte (one trailing
 newline, no trailing blank lines). Re-run the pipeline and diff.
+
+Issue: #102

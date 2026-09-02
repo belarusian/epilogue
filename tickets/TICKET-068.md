@@ -37,3 +37,5 @@ re-exports, but the module actually re-exports eight. `render_json` and
   `(Cycle, Entry, MergeStatus, parse_log, filter_by_status, render,
   render_json, __version__)`.
 - No code change; documentation only.
+
+Issue: #101

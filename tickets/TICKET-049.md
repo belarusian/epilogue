@@ -59,3 +59,5 @@ Decide the contract and make it true:
   `_infer_status("no-changes") is MergeStatus.MERGED`.
 Either way, add a test in `tests/test_parser.py` covering `no-changes` so the
 contract is pinned by the gate.
+
+Issue: #82

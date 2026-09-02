@@ -44,3 +44,5 @@ This catches both the missing-file and the directory case in one check and
 preserves the documented exit-2 "missing log" behavior for the missing case.
 (Alternatively, keep `exists()` and add `elif not args.log.is_file():` for the
 directory case.)
+
+Issue: #94

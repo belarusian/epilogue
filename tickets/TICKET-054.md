@@ -49,3 +49,5 @@ already ends in `\n`) and `print(out)` for json — or, more uniformly,
 `sys.stdout.write(out + "\n")` for both after normalizing `render` to not add
 its own trailing newline. Whichever is chosen, pin it with a byte-exact test for
 both formats (see TICKET-055).
+
+Issue: #87

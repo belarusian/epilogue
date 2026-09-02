@@ -43,3 +43,5 @@ TICKET-064):
 Note `UnicodeDecodeError` is NOT an `OSError` (it is a `ValueError`), so the
 encoding case (TICKET-062) needs its own handler or a combined
 `except (OSError, UnicodeDecodeError)`.
+
+Issue: #96

@@ -63,3 +63,5 @@ Replace the distance-only check with a content-aware check:
 
 Option 1 is the simplest and most predictable. It directly addresses both
 TICKET-057 and TICKET-058.
+
+Issue: #93
