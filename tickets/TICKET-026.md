@@ -42,3 +42,4 @@ Two distinct problems in one marker set:
 
 ---
 Status: CLOSED (Cycle 8, PR #11, commit db7a42f)
+Issue: #60

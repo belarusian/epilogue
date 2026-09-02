@@ -60,3 +60,4 @@ Decide the contract and make it true:
   `_infer_status("not yet merged") is MergeStatus.MERGED`.
 Either way, add a test in `tests/test_parser.py` covering an intervening-word
 phrasing so the contract is pinned by the gate.
+Issue: #70

@@ -42,3 +42,4 @@ considered.
 - Add an explicit status tag (TICKET-027) so multi-marker entries can be
   disambiguated at the source.
 Add a test pinning the chosen behavior for a multi-marker entry.
+Issue: #76

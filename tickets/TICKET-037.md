@@ -58,3 +58,4 @@ Decide the contract and make it true:
   the docs.
 Either way, add a test in `tests/test_parser.py` covering a non-ASCII
 description so the contract is pinned by the gate.
+Issue: #69

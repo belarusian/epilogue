@@ -58,3 +58,4 @@ Decide the contract and make it true:
   `_infer_status("reverting the change") is MergeStatus.MERGED` and
   `_infer_status("no-ops were recorded") is MergeStatus.MERGED`.
 Either way, add tests in `tests/test_parser.py` so the contract is pinned.
+Issue: #68

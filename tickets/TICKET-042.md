@@ -53,3 +53,4 @@ Decide the contract and make it true:
   `_infer_status("unmerged") is MergeStatus.MERGED`.
 Either way, add a test in `tests/test_parser.py` covering `unmerged` so the
 contract is pinned by the gate.
+Issue: #79

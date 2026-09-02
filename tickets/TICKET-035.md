@@ -55,3 +55,4 @@ Decide the contract and make it true:
   `_infer_status("abandoned-") is MergeStatus.MERGED`.
 Either way, add a test in `tests/test_parser.py` covering a marker with a
 trailing hyphen so the contract is pinned by the gate.
+Issue: #67

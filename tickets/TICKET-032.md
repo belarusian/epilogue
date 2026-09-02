@@ -39,3 +39,4 @@ README) — e.g. "the cycle number is parsed as a base-10 integer; leading zeros
 are dropped, so `## Cycle 007` is rendered as `## Cycle 7`" — and add a test
 pinning that `parse_log('## Cycle 007: Build\n- x\n')[0].number == 7` and that
 `render` emits `## Cycle 7: Build`.
+Issue: #64

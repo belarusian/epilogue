@@ -50,3 +50,4 @@ Decide the contract and make it true:
   `_infer_status("noop") is MergeStatus.MERGED`.
 Either way, add a test in `tests/test_parser.py` covering `noop` so the
 contract is pinned by the gate.
+Issue: #80

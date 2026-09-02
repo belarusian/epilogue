@@ -39,3 +39,4 @@ present, it OVERRIDES inference; when absent, fall back to `_infer_status`.
   the tag and its precedence over inference.
 - Add tests: an explicit tag overrides a conflicting marker word; absence of a
   tag preserves current inference.
+Issue: #75

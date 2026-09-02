@@ -49,3 +49,4 @@ Document the exact whitespace contract in `epilogue/parser.py:10-17`:
   any run of whitespace, including tabs.
 Add tests pinning: an indented header yields no cycle; a tab/multi-space
 header yields a cycle; a no-space-after-colon header yields a cycle.
+Issue: #65

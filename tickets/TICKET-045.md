@@ -63,3 +63,4 @@ Decide the contract and make it true:
   `_infer_status("not-merged-yet") is MergeStatus.MERGED`.
 Either way, add tests in `tests/test_parser.py` covering both hyphenated
 forms so the contract is pinned by the gate.
+Issue: #71

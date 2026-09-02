@@ -53,3 +53,4 @@ Add a pure, stdlib-only, fully-typed selector and wire it into the CLI:
 - Document the flag in the README with a byte-verified example.
 ---
 Status: CLOSED (Cycle 7, PR #10, commit a53e953)
+Issue: #61

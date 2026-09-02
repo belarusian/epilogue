@@ -46,3 +46,4 @@ Decide the contract and pin it:
   duplicate numbers are kept in file order and that the range filter matches
   every cycle whose number falls in range, and add a test pinning the
   parse/render/filter behavior for a duplicate-number log.
+Issue: #62

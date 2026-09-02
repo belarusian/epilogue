@@ -75,3 +75,4 @@ Decide the contract and make it true:
   `_infer_status("reverted2") is MergeStatus.MERGED`.
 Either way, add tests in `tests/test_parser.py` covering hyphen/digit-adjacent
 markers so the contract is pinned by the gate.
+Issue: #14

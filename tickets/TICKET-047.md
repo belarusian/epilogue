@@ -64,3 +64,4 @@ Decide the contract and make it true:
   MergeStatus.MERGED`.
 Either way, add a test in `tests/test_parser.py` covering `un-merged` so the
 contract is pinned by the gate.
+Issue: #73

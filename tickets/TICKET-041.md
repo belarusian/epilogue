@@ -61,3 +61,4 @@ Decide the contract and make it true:
   `_infer_status("abandon") is MergeStatus.MERGED`.
 Either way, add tests in `tests/test_parser.py` covering `revert` and `abandon`
 so the contract is pinned by the gate.
+Issue: #78
