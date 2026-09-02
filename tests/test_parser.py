@@ -731,3 +731,66 @@ def test_not_merged_markers_documented_in_readme_and_docstring() -> None:
             f"single-token NOT_MERGED marker {marker!r} is missing from the "
             f"parser module docstring NOT_MERGED list"
         )
+
+
+# ---------------------------------------------------------------------------
+# Cycle 46: marker-table additions (TICKET-040..044)
+# ---------------------------------------------------------------------------
+
+
+def test_status_no_change_hyphenated_singular_recognized() -> None:
+    """TICKET-044 fix-pin: the hyphenated singular 'no-change' is a single
+    token and must classify NO_OP (it fell through to the MERGED default before)."""
+    log = (
+        "## Cycle 1: N\n"
+        "- no-change was recorded\n"
+    )
+    cycles = parse_log(log)
+    assert [e.status for e in cycles[0].entries] == [MergeStatus.NO_OP]
+
+
+def test_status_noop_unseparated_singular_recognized() -> None:
+    """TICKET-043 fix-pin: the unseparated singular 'noop' is a single token
+    and must classify NO_OP (it fell through to the MERGED default before)."""
+    log = (
+        "## Cycle 1: N\n"
+        "- noop was recorded\n"
+    )
+    cycles = parse_log(log)
+    assert [e.status for e in cycles[0].entries] == [MergeStatus.NO_OP]
+
+
+def test_status_no_ops_space_plural_recognized() -> None:
+    """TICKET-040 fix-pin: the space-plural 'no ops' (two tokens) must classify
+    NO_OP, symmetric with the existing 'no changes' entry."""
+    log = (
+        "## Cycle 1: N\n"
+        "- no ops were recorded\n"
+    )
+    cycles = parse_log(log)
+    assert [e.status for e in cycles[0].entries] == [MergeStatus.NO_OP]
+
+
+def test_status_unmerged_single_word_recognized() -> None:
+    """TICKET-042 fix-pin: the single-word 'unmerged' (no hyphen) is a single
+    token and must classify NOT_MERGED (it fell through to the MERGED default before)."""
+    log = (
+        "## Cycle 1: B\n"
+        "- unmerged the branch\n"
+    )
+    cycles = parse_log(log)
+    assert [e.status for e in cycles[0].entries] == [MergeStatus.NOT_MERGED]
+
+
+def test_status_revert_base_form_recognized() -> None:
+    """TICKET-041 fix-pin (partial): the base/imperative form 'revert' is a
+    single token and must classify NOT_MERGED. Note: 'abandon' is intentionally
+    NOT added because the pinned Cycle 12 contract (contract A) documents
+    'abandon' as a non-marker (MERGED) in the tokenizer docstring and a
+    regression test pins that behavior."""
+    log = (
+        "## Cycle 1: B\n"
+        "- revert the change\n"
+    )
+    cycles = parse_log(log)
+    assert [e.status for e in cycles[0].entries] == [MergeStatus.NOT_MERGED]
