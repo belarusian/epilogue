@@ -39,3 +39,4 @@ Create `tests/test_render.py` (after TICKET-016 lands) covering at minimum:
 Keep every existing test green.
 ---
 Status: CLOSED (Cycle 4, PR #6, commit 1de4f13)
+Issue: #5

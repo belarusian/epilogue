@@ -25,3 +25,4 @@ a distinct non-zero exit code (e.g. 2). Honest scaffolding, not fake progress.
 
 ---
 Status: CLOSED (Cycle 2, PR #2, merged 3dde27a)
+Issue: #41

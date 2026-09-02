@@ -18,3 +18,4 @@ from `epilogue.cli`) so `python -m epilogue` works.
 
 ---
 Status: CLOSED (Cycle 2, PR #2, merged 3dde27a)
+Issue: #42

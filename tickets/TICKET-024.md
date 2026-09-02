@@ -48,3 +48,4 @@ reproduced descriptions as regression tests (see TICKET-027).
 
 ---
 Status: CLOSED (Cycle 8, PR #11, commit db7a42f)
+Issue: #57

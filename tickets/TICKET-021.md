@@ -50,3 +50,4 @@ Add a pure, stdlib-only, fully-typed function to `epilogue/render.py`:
 - Re-export `render_json` from `epilogue/__init__.py` and add it to `__all__`.
 ---
 Status: CLOSED (Cycle 6, PR #9, commit dea16f5)
+Issue: #54

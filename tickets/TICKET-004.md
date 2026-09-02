@@ -16,4 +16,4 @@ Missing `.github/workflows/` directory and CI configuration; no automated pytest
 - Contributors have no feedback loop; the bootstrap cycle cannot be declared "done" without a passing gate.
 
 ## Suggestion
-Create `.github/workflows/ci.yml`:
+Create `.github/workflows/ci.yml`:Issue: #39

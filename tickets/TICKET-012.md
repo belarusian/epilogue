@@ -42,3 +42,4 @@ behavior.
 
 ---
 Status: CLOSED (Cycle 3, PR #3, merged 6bc0053)
+Issue: #47

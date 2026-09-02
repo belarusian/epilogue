@@ -17,3 +17,4 @@ Keep the package stdlib-only (no new runtime deps).
 
 ---
 Status: CLOSED (Cycle 2, PR #2, merged 3dde27a)
+Issue: #43

@@ -63,3 +63,4 @@ Wire the full pipeline in `main()` (after TICKET-016/017 land the renderer):
   share one surface (see TICKET-016).
 ---
 Status: CLOSED (Cycle 4, PR #6, commit 1de4f13)
+Issue: #51

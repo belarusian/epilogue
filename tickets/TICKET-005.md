@@ -25,3 +25,4 @@ Implement in `epilogue/` (after TICKET-001 creates the layout):
 3. **`epilogue/cli.py`** — `main()` using `argparse` with `--project` (str), `--from` (int), `--to` (int), and a positional or `--log` path. Reads the log file, calls parser, calls renderer, prints to stdout. Exit code 0 on success, 1 on parse error or out-of-range cycle.
 
 All code stdlib-only. Type-annotated for mypy strict.
+Issue: #40

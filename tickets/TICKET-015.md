@@ -35,3 +35,4 @@ parse-to-render capability is pending, not that the CLI is.
 
 ---
 Status: CLOSED (Cycle 3, PR #3, merged 6bc0053)
+Issue: #50

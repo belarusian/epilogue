@@ -47,3 +47,4 @@ never the real ground-truth log):
 - Keep every existing test green.
 ---
 Status: CLOSED (Cycle 6, PR #9, commit dea16f5)
+Issue: #56

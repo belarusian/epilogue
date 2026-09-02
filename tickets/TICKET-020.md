@@ -54,3 +54,4 @@ After TICKET-016/018 land, update the docs to match the real behavior:
 Keep every claim verifiable against the code after the build tickets land.
 ---
 Status: CLOSED (Cycle 4, PR #6, commit 1de4f13)
+Issue: #53

@@ -18,3 +18,4 @@ layout, how to run the gate, and the (still-pending) CLI usage.
 
 ---
 Status: CLOSED (Cycle 2, PR #2, merged 3dde27a)
+Issue: #45

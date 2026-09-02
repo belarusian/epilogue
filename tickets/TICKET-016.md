@@ -50,3 +50,4 @@ Create `epilogue/render.py` with a pure, stdlib-only, fully-typed function:
   inputs so the CLI (TICKET-018) and tests share one surface.
 ---
 Status: CLOSED (Cycle 4, PR #6, commit 1de4f13)
+Issue: #4

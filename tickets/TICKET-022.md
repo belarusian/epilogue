@@ -43,3 +43,4 @@ Extend `build_parser()` and `main()` in `epilogue/cli.py`:
 - Update `README.md` Usage to document the new flag and show a JSON example.
 ---
 Status: CLOSED (Cycle 6, PR #9, commit dea16f5)
+Issue: #55
