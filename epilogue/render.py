@@ -52,7 +52,7 @@ from __future__ import annotations
 import json
 from dataclasses import replace
 
-from epilogue.model import Cycle, MergeStatus
+from epilogue.model import Cycle, Entry, MergeStatus
 
 # Fixed sub-section order and their exact header lines. The three-way
 # distinction is the core truthfulness requirement, so the order and labels
@@ -106,6 +106,25 @@ def render(cycles: list[Cycle], *, project: str | None = None) -> str:
     return "\n".join(lines) + "\n"
 
 
+def _entry_to_json(entry: Entry) -> dict[str, str]:
+    """Serialize one :class:`Entry` to its JSON object (TICKET-071).
+
+    The object always carries ``"description"`` and ``"status"`` (the
+    :class:`MergeStatus` ``.value`` token). It carries an ADDITIONAL
+    ``"secondary_status"`` key only when ``entry.secondary_status`` is not
+    ``None`` (the multi-marker case added in Cycle 47); for the common
+    single-class case the key is ABSENT, so the pinned JSON shape for
+    single-class entries is byte-identical.
+    """
+    obj: dict[str, str] = {
+        "description": entry.description,
+        "status": entry.status.value,
+    }
+    if entry.secondary_status is not None:
+        obj["secondary_status"] = entry.secondary_status.value
+    return obj
+
+
 def render_json(cycles: list[Cycle], *, project: str | None = None) -> str:
     """Render a list of :class:`Cycle` into a machine-readable JSON document.
 
@@ -125,6 +144,10 @@ def render_json(cycles: list[Cycle], *, project: str | None = None) -> str:
     entry's original order). ``"status"`` is the :class:`MergeStatus` enum's
     ``.value`` string (``"merged"`` / ``"no_op"`` / ``"not_merged"``), so the
     three-way distinction is preserved as a stable, machine-checkable token.
+    An entry additionally carries a ``"secondary_status"`` key (the same
+    ``.value`` token) ONLY when it has a non-``None`` ``secondary_status``
+    (the multi-marker case, Cycle 47); for the common single-class entry the
+    key is ABSENT, so the pinned JSON shape for those entries is unchanged.
 
     Args:
         cycles: The cycles to render, in the order they should appear.
@@ -142,10 +165,7 @@ def render_json(cycles: list[Cycle], *, project: str | None = None) -> str:
         {
             "number": cycle.number,
             "title": cycle.title,
-            "entries": [
-                {"description": entry.description, "status": entry.status.value}
-                for entry in cycle.entries
-            ],
+            "entries": [_entry_to_json(entry) for entry in cycle.entries],
         }
         for cycle in cycles
     ]

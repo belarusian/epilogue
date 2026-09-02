@@ -480,3 +480,65 @@ def test_render_json_leading_zero_number_is_int() -> None:
     doc = json.loads(render_json(cycles))
     assert doc["cycles"][0]["number"] == 7
     assert isinstance(doc["cycles"][0]["number"], int)
+
+
+# ---------------------------------------------------------------------------
+# secondary_status in JSON (TICKET-071): optional key, present only when set
+# ---------------------------------------------------------------------------
+
+
+def test_render_json_secondary_status_present_when_set() -> None:
+    """A multi-marker entry emits 'secondary_status' with the .value token."""
+    cycles = [
+        Cycle(
+            number=1,
+            title="A",
+            entries=[
+                Entry(
+                    description="reverted the no-op",
+                    status=MergeStatus.NOT_MERGED,
+                    secondary_status=MergeStatus.NO_OP,
+                ),
+            ],
+        ),
+    ]
+    doc = json.loads(render_json(cycles))
+    entry = doc["cycles"][0]["entries"][0]
+    assert entry == {
+        "description": "reverted the no-op",
+        "status": "not_merged",
+        "secondary_status": "no_op",
+    }
+
+
+def test_render_json_secondary_status_absent_when_none() -> None:
+    """A single-class entry OMITS the 'secondary_status' key (shape unchanged)."""
+    cycles = [
+        Cycle(
+            number=1,
+            title="A",
+            entries=[
+                Entry(description="shipped the feature", status=MergeStatus.MERGED),
+                Entry(description="a no-op", status=MergeStatus.NO_OP),
+            ],
+        ),
+    ]
+    doc = json.loads(render_json(cycles))
+    entries = doc["cycles"][0]["entries"]
+    assert entries == [
+        {"description": "shipped the feature", "status": "merged"},
+        {"description": "a no-op", "status": "no_op"},
+    ]
+    for entry in entries:
+        assert "secondary_status" not in entry
+
+
+def test_render_json_secondary_status_end_to_end_from_parser() -> None:
+    """A multi-marker log line surfaces secondary_status through parse+render."""
+    from epilogue.parser import parse_log
+
+    cycles = parse_log("## Cycle 1: A\n- reverted the no-op\n")
+    doc = json.loads(render_json(cycles))
+    entry = doc["cycles"][0]["entries"][0]
+    assert entry["status"] == "not_merged"
+    assert entry["secondary_status"] == "no_op"
