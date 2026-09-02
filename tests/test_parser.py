@@ -197,18 +197,22 @@ def test_multi_marker_secondary_status_helper() -> None:
 
 
 def test_multi_marker_does_not_alter_contract_a_abandon() -> None:
-    """TICKET-028 regression guard: the pinned Cycle 12 contract A is unchanged.
+    """TICKET-028 regression guard: the multi-marker change must not add a
+    secondary marker to a single-class entry.
 
-    'abandon' is intentionally NOT a marker (it is MERGED), and 'abandoné'
-    tokenizes to ['abandon'] and stays MERGED. The multi-marker change must
-    not re-open this contract: neither entry gains a NOT_MERGED status or a
-    secondary marker.
+    contract A redesign per TICKET-072 - was: 'abandon' is intentionally NOT a
+    marker (it is MERGED), and 'abandoné' tokenizes to ['abandon'] and stays
+    MERGED; now: 'abandon' IS a NOT_MERGED marker (base/imperative form), so
+    both entries infer NOT_MERGED, because the operator ruling (2026-09-02)
+    authorized a deliberate, ticketed redesign of the abandon clause of
+    contract A. The guard's ORIGINAL intent - that a single-class entry gains
+    no secondary_status - is preserved and re-pinned here.
     """
     log = "## Cycle 1: A\n- abandon the branch\n- abandoné the branch\n"
     entries = parse_log(log)[0].entries
     assert [e.status for e in entries] == [
-        MergeStatus.MERGED,
-        MergeStatus.MERGED,
+        MergeStatus.NOT_MERGED,
+        MergeStatus.NOT_MERGED,
     ]
     assert all(e.secondary_status is None for e in entries)
 
@@ -462,7 +466,7 @@ def test_status_non_ascii_dropped_not_folded() -> None:
 
     'revertedé' -> ['reverted'] (marker) -> NOT_MERGED;
     'no-opé'    -> ['no-op']    (marker) -> NO_OP;
-    'abandoné'   -> ['abandon']  (no marker) -> MERGED.
+    'abandoné'   -> ['abandon']  (marker) -> NOT_MERGED.
     """
     from epilogue.parser import _infer_status, _tokenize
 
@@ -470,7 +474,11 @@ def test_status_non_ascii_dropped_not_folded() -> None:
     assert _tokenize("abandoné") == ["abandon"]
     assert _infer_status("revertedé") is MergeStatus.NOT_MERGED
     assert _infer_status("no-opé") is MergeStatus.NO_OP
-    assert _infer_status("abandoné") is MergeStatus.MERGED
+    # contract A redesign per TICKET-072 - was: _infer_status("abandoné") is
+    # MERGED (stem 'abandon' was not a marker); now: NOT_MERGED, because the
+    # base/imperative 'abandon' form is now a NOT_MERGED marker (operator
+    # ruling 2026-09-02, deliberate ticketed redesign of the abandon clause).
+    assert _infer_status("abandoné") is MergeStatus.NOT_MERGED
 
 
 # ---------------------------------------------------------------------------
@@ -886,17 +894,34 @@ def test_status_unmerged_single_word_recognized() -> None:
 
 
 def test_status_revert_base_form_recognized() -> None:
-    """TICKET-041 fix-pin (partial): the base/imperative form 'revert' is a
-    single token and must classify NOT_MERGED. Note: 'abandon' is intentionally
-    NOT added because the pinned Cycle 12 contract (contract A) documents
-    'abandon' as a non-marker (MERGED) in the tokenizer docstring and a
-    regression test pins that behavior."""
+    """TICKET-041 fix-pin: the base/imperative form 'revert' is a single token
+    and must classify NOT_MERGED (reverting a change means it was not kept).
+    This behavior was already correct before the contract-A redesign and is
+    unchanged by TICKET-072."""
     log = (
         "## Cycle 1: B\n"
         "- revert the change\n"
     )
     cycles = parse_log(log)
     assert [e.status for e in cycles[0].entries] == [MergeStatus.NOT_MERGED]
+
+
+def test_status_abandon_base_form_recognized() -> None:
+    """TICKET-072 (contract A redesign per operator ruling 2026-09-02): the
+    base/imperative form 'abandon' is a single token and must classify
+    NOT_MERGED, matching the other three verb forms of the stem (abandoned,
+    abandoning, abandons). This is the deliberate, ticketed amendment of the
+    abandon clause of the pinned Cycle 12 contract A."""
+    log = (
+        "## Cycle 1: B\n"
+        "- abandon the renderer\n"
+        "- abandon\n"
+    )
+    cycles = parse_log(log)
+    assert [e.status for e in cycles[0].entries] == [
+        MergeStatus.NOT_MERGED,
+        MergeStatus.NOT_MERGED,
+    ]
 
 
 # ---------------------------------------------------------------------------
@@ -959,22 +984,27 @@ def test_explicit_tag_absent_preserves_inference() -> None:
     ]
 
 
-def test_explicit_tag_does_not_change_contract_a_abandon() -> None:
-    """Contract A is unchanged: an UNTAGGED 'abandon' still infers MERGED.
+def test_explicit_tag_is_authoritative_over_abandon_inference() -> None:
+    """The explicit [status] tag remains authoritative over inference.
 
-    The tag is a new, higher-precedence mechanism; it does not alter the
-    pinned inference table. An untagged 'abandon' stays MERGED, and the same
-    line CAN be pinned to NOT_MERGED with an explicit tag.
+    contract A redesign per TICKET-072 - was: an UNTAGGED 'abandon' still
+    infers MERGED (the tag was the only way to pin it to NOT_MERGED); now: an
+    untagged 'abandon' infers NOT_MERGED (the base/imperative form is a
+    NOT_MERGED marker), because the operator ruling (2026-09-02) authorized a
+    deliberate, ticketed redesign of the abandon clause of contract A. The
+    tag's authority is re-pinned here: an untagged 'abandon' is NOT_MERGED by
+    inference, and the same line pinned to [merged] is MERGED (the tag
+    overrides the inference).
     """
     log = (
         "## Cycle 1: T\n"
         "- abandon the renderer\n"
-        "- abandon the renderer [not-merged]\n"
+        "- abandon the renderer [merged]\n"
     )
     cycles = parse_log(log)
-    assert cycles[0].entries[0].status is MergeStatus.MERGED
+    assert cycles[0].entries[0].status is MergeStatus.NOT_MERGED
     assert cycles[0].entries[0].description == "abandon the renderer"
-    assert cycles[0].entries[1].status is MergeStatus.NOT_MERGED
+    assert cycles[0].entries[1].status is MergeStatus.MERGED
     assert cycles[0].entries[1].description == "abandon the renderer"
 
 

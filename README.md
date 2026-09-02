@@ -152,10 +152,12 @@ tagged entry. When the tag is absent, the entry is classified by the inference
 rule below, unchanged. An invalid or unknown tag (e.g. `[wip]`) is not
 recognized and is left in the description, with inference applied as usual.
 
-This is a new, higher-precedence mechanism and does **not** alter the pinned
-inference contract: an *untagged* `abandon` still infers `merged`. The tag is
-the documented escape hatch that lets the log be authoritative about an
-entry's status.
+This is a new, higher-precedence mechanism. The tag is the documented escape
+hatch that lets the log be authoritative about an entry's status. Note the
+abandon clause of the pinned Cycle 12 contract A was deliberately amended by
+TICKET-072 (operator ruling 2026-09-02): an *untagged* `abandon` now infers
+`not_merged` (it is a `not_merged` marker), so the tag is no longer required
+to pin it.
 
 ## Status inference
 
@@ -176,7 +178,7 @@ exactly what the parser honors.
 
   * `not_merged`: `not merged`, `not-merged`, `not-yet-merged`,
     `not-merged-yet`, `un-merged`, `unmerged`, `reverted`, `reverting`,
-    `reverts`, `revert`, `abandoned`, `abandoning`, `abandons`
+    `reverts`, `revert`, `abandoned`, `abandoning`, `abandons`, `abandon`
   * `no_op`: `no-op`, `no-ops`, `noops`, `noop`, `no op`, `no ops`,
     `no operation`, `no operations`, `no change`, `no changes`,
     `no-change`, `no-changes`, `nothing changed`
@@ -228,8 +230,8 @@ the outcome):
 * **Non-ASCII characters are dropped, not transliterated.** Accents, CJK, and
   emoji are removed and act as separators, so a marker matches only when its
   exact ASCII stem survives. The same trailing character gives different
-  results: `revertedé` is `not_merged` (stem `reverted` is a marker) but
-  `abandoné` is `merged` (stem `abandon` is not).
+  results: `revertedé` is `not_merged` (stem `reverted` is a marker) and
+  `abandoné` is `not_merged` (stem `abandon` is a marker per TICKET-072).
 
 ## Status filter
 
