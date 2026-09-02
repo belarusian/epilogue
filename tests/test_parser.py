@@ -110,6 +110,109 @@ def test_status_precedence_not_merged_over_no_op() -> None:
     assert cycles[0].entries[0].status is MergeStatus.NOT_MERGED
 
 
+# ---------------------------------------------------------------------------
+# Multi-marker entries preserve the second marker (TICKET-028)
+# ---------------------------------------------------------------------------
+
+
+def test_multi_marker_secondary_status_no_op_preserved() -> None:
+    """TICKET-028: a NOT_MERGED + NO_OP entry keeps the second marker.
+
+    The primary status is still NOT_MERGED (precedence unchanged), but the
+    NO_OP marker is no longer silently discarded: it is recorded on
+    ``secondary_status``.
+    """
+    log = "## Cycle 1: M\n- reverted the no-op\n"
+    entry = parse_log(log)[0].entries[0]
+    assert entry.status is MergeStatus.NOT_MERGED
+    assert entry.secondary_status is MergeStatus.NO_OP
+
+
+def test_multi_marker_secondary_status_all_ticket_examples() -> None:
+    """TICKET-028: every example from the ticket now surfaces its second marker.
+
+    Each of these carries both a NOT_MERGED and a NO_OP marker; the primary
+    stays NOT_MERGED and the discarded NO_OP is now recorded as secondary.
+    """
+    log = (
+        "## Cycle 1: M\n"
+        "- reverted the no-op\n"
+        "- abandoned the no-op\n"
+        "- cleaned up the no-op and the reverted branch\n"
+    )
+    entries = parse_log(log)[0].entries
+    assert [e.status for e in entries] == [
+        MergeStatus.NOT_MERGED,
+        MergeStatus.NOT_MERGED,
+        MergeStatus.NOT_MERGED,
+    ]
+    assert [e.secondary_status for e in entries] == [
+        MergeStatus.NO_OP,
+        MergeStatus.NO_OP,
+        MergeStatus.NO_OP,
+    ]
+
+
+def test_single_marker_entry_has_no_secondary_status() -> None:
+    """TICKET-028: a single-class entry has secondary_status None.
+
+    The common case is unchanged: an entry with only one status class (or
+    none) carries no secondary marker.
+    """
+    log = (
+        "## Cycle 1: S\n"
+        "- shipped the CLI shell\n"
+        "- a no-op: nothing changed\n"
+        "- this one was reverted\n"
+    )
+    entries = parse_log(log)[0].entries
+    assert [e.status for e in entries] == [
+        MergeStatus.MERGED,
+        MergeStatus.NO_OP,
+        MergeStatus.NOT_MERGED,
+    ]
+    assert all(e.secondary_status is None for e in entries)
+
+
+def test_multi_marker_secondary_status_helper() -> None:
+    """TICKET-028: the helper returns (primary, secondary) deterministically."""
+    from epilogue.parser import _infer_statuses
+
+    assert _infer_statuses("reverted the no-op") == (
+        MergeStatus.NOT_MERGED,
+        MergeStatus.NO_OP,
+    )
+    assert _infer_statuses("no-op but reverted") == (
+        MergeStatus.NOT_MERGED,
+        MergeStatus.NO_OP,
+    )
+    assert _infer_statuses("a no-op: nothing changed") == (
+        MergeStatus.NO_OP,
+        None,
+    )
+    assert _infer_statuses("shipped the CLI shell") == (
+        MergeStatus.MERGED,
+        None,
+    )
+
+
+def test_multi_marker_does_not_alter_contract_a_abandon() -> None:
+    """TICKET-028 regression guard: the pinned Cycle 12 contract A is unchanged.
+
+    'abandon' is intentionally NOT a marker (it is MERGED), and 'abandoné'
+    tokenizes to ['abandon'] and stays MERGED. The multi-marker change must
+    not re-open this contract: neither entry gains a NOT_MERGED status or a
+    secondary marker.
+    """
+    log = "## Cycle 1: A\n- abandon the branch\n- abandoné the branch\n"
+    entries = parse_log(log)[0].entries
+    assert [e.status for e in entries] == [
+        MergeStatus.MERGED,
+        MergeStatus.MERGED,
+    ]
+    assert all(e.secondary_status is None for e in entries)
+
+
 def test_status_case_insensitive() -> None:
     """Markers match case-insensitively."""
     log = (

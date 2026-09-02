@@ -104,6 +104,17 @@ description using **token-based** matching, not free substring matching.
   ``MERGED`` status is the deterministic default when no ``NOT_MERGED`` or
   ``NO_OP`` marker matches.
 
+* **Multi-marker entries keep their second marker.** When a description
+  carries markers of *both* ``NOT_MERGED`` and ``NO_OP``, the entry's primary
+  ``status`` is still chosen by the precedence rule above (``NOT_MERGED``
+  wins), but the other class is no longer silently discarded: it is recorded
+  on the entry's ``secondary_status`` field. ``secondary_status`` is ``None``
+  for the common single-class case. This is additive — it never changes the
+  primary ``status`` — so the precedence rule and every pinned contract
+  (including the ``abandon`` token-boundary contract) are unchanged. For
+  example, ``"reverted the no-op"`` is ``status=NOT_MERGED`` with
+  ``secondary_status=NO_OP``.
+
 Because matching is token-based and requires a contiguous run, a marker word
 embedded inside a larger hyphenated word does **not** trigger. For example,
 ``"shipped the abandoned-cart feature"`` tokenizes to
@@ -250,6 +261,62 @@ def _has_bounded_gap_run(
     return bool(reachable)
 
 
+def _status_classes(description: str) -> set[MergeStatus]:
+    """Return the set of status classes whose markers match ``description``.
+
+    This is the *lossless* view of the description: it reports every status
+    class (``NOT_MERGED`` and/or ``NO_OP``) that has at least one matching
+    marker, rather than collapsing them to a single status. ``MERGED`` is the
+    default and is only reported when no ``NOT_MERGED`` or ``NO_OP`` marker
+    matches. Matching is token-based and identical to the single-status rule:
+    every marker requires a contiguous run except the ``("not", "merged")``
+    phrase, which tolerates a bounded gap of up to
+    ``_NOT_MERGED_PHRASE_MAX_GAP`` intervening tokens. A marker word embedded
+    inside a larger hyphenated token does not trigger.
+    """
+    tokens = _tokenize(description)
+    classes: set[MergeStatus] = set()
+    for marker in _NOT_MERGED_MARKERS:
+        if marker == _NOT_MERGED_PHRASE:
+            if _has_bounded_gap_run(tokens, marker, _NOT_MERGED_PHRASE_MAX_GAP):
+                classes.add(MergeStatus.NOT_MERGED)
+                break
+        elif _has_contiguous_run(tokens, marker):
+            classes.add(MergeStatus.NOT_MERGED)
+            break
+    for marker in _NO_OP_MARKERS:
+        if _has_contiguous_run(tokens, marker):
+            classes.add(MergeStatus.NO_OP)
+            break
+    if not classes:
+        classes.add(MergeStatus.MERGED)
+    return classes
+
+
+def _infer_statuses(description: str) -> tuple[MergeStatus, MergeStatus | None]:
+    """Return ``(primary, secondary)`` for a description.
+
+    The **primary** status is chosen by the documented precedence
+    ``NOT_MERGED`` > ``NO_OP`` > ``MERGED`` (default) — this is exactly the
+    single-status rule and is unchanged. The **secondary** status is the
+    *other* status class present in the description, or ``None`` when the
+    description carries at most one status class. This makes a multi-marker
+    entry's second marker explicit instead of silently discarded, without
+    ever altering the primary status.
+    """
+    classes = _status_classes(description)
+    if len(classes) == 1:
+        return next(iter(classes)), None
+    # Two classes are present (NOT_MERGED and NO_OP). Pick the primary by the
+    # documented precedence; the other is the secondary.
+    if MergeStatus.NOT_MERGED in classes:
+        primary = MergeStatus.NOT_MERGED
+    else:
+        primary = MergeStatus.NO_OP
+    secondary = next(iter(classes - {primary}))
+    return primary, secondary
+
+
 def _infer_status(description: str) -> MergeStatus:
     """Infer the truthful :class:`MergeStatus` from a description.
 
@@ -259,18 +326,12 @@ def _infer_status(description: str) -> MergeStatus:
     a bounded gap of up to ``_NOT_MERGED_PHRASE_MAX_GAP`` intervening tokens
     (so "not yet merged" / "not been merged" match). A marker word embedded
     inside a larger hyphenated token does not trigger.
+
+    This returns only the *primary* status; use :func:`_infer_statuses` to
+    also recover the secondary status of a multi-marker entry.
     """
-    tokens = _tokenize(description)
-    for marker in _NOT_MERGED_MARKERS:
-        if marker == _NOT_MERGED_PHRASE:
-            if _has_bounded_gap_run(tokens, marker, _NOT_MERGED_PHRASE_MAX_GAP):
-                return MergeStatus.NOT_MERGED
-        elif _has_contiguous_run(tokens, marker):
-            return MergeStatus.NOT_MERGED
-    for marker in _NO_OP_MARKERS:
-        if _has_contiguous_run(tokens, marker):
-            return MergeStatus.NO_OP
-    return MergeStatus.MERGED
+    primary, _ = _infer_statuses(description)
+    return primary
 
 
 def parse_log(text: str) -> list[Cycle]:
@@ -309,8 +370,13 @@ def parse_log(text: str) -> list[Cycle]:
         if not description:
             continue
 
+        primary, secondary = _infer_statuses(description)
         current.entries.append(
-            Entry(description=description, status=_infer_status(description))
+            Entry(
+                description=description,
+                status=primary,
+                secondary_status=secondary,
+            )
         )
 
     return cycles

@@ -23,8 +23,11 @@ def test_entry_fields() -> None:
     entry = Entry(description="did a thing", status=MergeStatus.MERGED)
     assert entry.description == "did a thing"
     assert entry.status is MergeStatus.MERGED
+    # secondary_status is the additive multi-marker field (TICKET-028); it
+    # defaults to None for the common single-class case.
+    assert entry.secondary_status is None
     names = {f.name for f in fields(Entry)}
-    assert names == {"description", "status"}
+    assert names == {"description", "status", "secondary_status"}
 
 
 def test_entry_is_mutable_dataclass() -> None:
