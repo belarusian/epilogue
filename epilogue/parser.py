@@ -63,10 +63,12 @@ tag is absent, the entry is classified by the token-based inference below,
 unchanged. An invalid or unknown tag (e.g. ``[wip]``) is not recognized and is
 left in the description, with inference applied as usual.
 
-This is a new, higher-precedence mechanism and does **not** alter the pinned
-inference contract (contract A): an *untagged* ``abandon`` still infers
-``MERGED``. The tag is the deliberate, documented escape hatch that lets the
-log be authoritative about an entry's status (TICKET-070).
+This is a new, higher-precedence mechanism. The tag is the deliberate,
+documented escape hatch that lets the log be authoritative about an entry's
+status (TICKET-070). Note the abandon clause of the pinned Cycle 12 contract
+A was deliberately amended by TICKET-072 (operator ruling 2026-09-02): an
+*untagged* ``abandon`` now infers ``NOT_MERGED`` (it is a ``NOT_MERGED``
+marker), so the tag is no longer required to pin it.
 
 Status inference (truthful, deterministic)
 ------------------------------------------
@@ -84,10 +86,11 @@ description using **token-based** matching, not free substring matching.
     emoji, and any other character outside ``[a-z0-9-]`` are silently removed
     and act as separators. So ``"reverted\u00e9"`` tokenizes to
     ``["reverted"]`` (matches ``NOT_MERGED``) while ``"abandon\u00e9"``
-    tokenizes to ``["abandon"]`` (no marker, ``MERGED``) — the outcome of the
-    same trailing character depends on whether the ASCII stem happens to be a
-    marker. This is intentional: the tokenizer never transliterates, so a
-    marker must appear with its exact ASCII spelling.
+    tokenizes to ``["abandon"]`` (matches ``NOT_MERGED`` since the base form
+    ``abandon`` is a marker per TICKET-072) — the outcome of the same trailing
+    character depends on whether the ASCII stem happens to be a marker. This
+    is intentional: the tokenizer never transliterates, so a marker must
+    appear with its exact ASCII spelling.
 * A **marker** is a tuple of tokens (a phrase). A marker matches only when
   its tokens occur as a **contiguous run** in the description's token list
   (in order, with no other tokens between them) — with one documented
@@ -99,7 +102,7 @@ description using **token-based** matching, not free substring matching.
     ``("not-yet-merged",)``, ``("not-merged-yet",)``,
     ``("un-merged",)``, ``("unmerged",)``, ``("reverted",)``,
     ``("reverting",)``, ``("reverts",)``, ``("revert",)``, ``("abandoned",)``, ``("abandoning",)``,
-    ``("abandons",)``
+    ``("abandons",)``, ``("abandon",)``
   * ``NO_OP``: ``("no-op",)``, ``("no-ops",)``, ``("noops",)``,
     ``("no", "op")``, ``("no", "ops")``, ``("no", "operation")``,
     ``("no", "operations")``, ``("no", "change")``, ``("no", "changes")``,
@@ -184,6 +187,10 @@ _NOT_MERGED_MARKERS: tuple[tuple[str, ...], ...] = (
     ("abandoned",),
     ("abandoning",),
     ("abandons",),
+    # contract A redesign per TICKET-072 (operator ruling 2026-09-02): the
+    # base/imperative form 'abandon' is now a NOT_MERGED marker, matching the
+    # other three verb forms of the stem.
+    ("abandon",),
 )
 _NO_OP_MARKERS: tuple[tuple[str, ...], ...] = (
     ("no-op",),
@@ -216,8 +223,10 @@ _NOT_MERGED_PHRASE_MAX_GAP: int = 2
 # tag is case-insensitive and accepts a hyphen or underscore between the two
 # words. When present it OVERRIDES token-based inference and is stripped from
 # the description; when absent, inference is used unchanged. This is a new,
-# higher-precedence mechanism and does NOT alter the pinned inference contract
-# (contract A): an untagged "abandon" still infers MERGED.
+# higher-precedence mechanism. The abandon clause of the pinned Cycle 12
+# contract A was deliberately amended by TICKET-072 (operator ruling
+# 2026-09-02): an untagged "abandon" now infers NOT_MERGED (it is a
+# NOT_MERGED marker), so the tag is no longer required to pin it.
 _STATUS_TAG_RE = re.compile(r"\s*\[(merged|no[-_]op|not[-_]merged)\]\s*$", re.IGNORECASE)
 
 # Map the tag's normalized token to a MergeStatus.

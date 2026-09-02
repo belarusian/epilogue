@@ -62,3 +62,5 @@ Decide the contract and make it true:
 Either way, add tests in `tests/test_parser.py` covering `revert` and `abandon`
 so the contract is pinned by the gate.
 Issue: #78
+
+Status: OPEN (Issue: #78; contract-blocked until the deliberate contract-A redesign cycle)
