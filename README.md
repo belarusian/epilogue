@@ -132,6 +132,31 @@ knows exactly what is safe:
   `##\tCycle 2: Build`, `##  Cycle 2: Build`, `## Cycle 2 : Build`, and
   `## Cycle 2:Build` all parse to number 2).
 
+## Explicit status tag (authoritative override)
+
+A log author may pin an entry's status at the source with a **trailing
+bracketed tag** at the end of the line:
+
+```markdown
+- shipped the feature [merged]
+- cleaned up the no-op [no-op]
+- reverted the change [not-merged]
+```
+
+The tag is case-insensitive and accepts a hyphen or underscore between the two
+words (`[no-op]` / `[no_op]`, `[not-merged]` / `[not_merged]`). When present it
+**overrides** the token-based inference below and is stripped from the entry's
+`description` (so the rendered/JSON description no longer carries the tag).
+Because the tag is authoritative, no `secondary_status` is recorded for a
+tagged entry. When the tag is absent, the entry is classified by the inference
+rule below, unchanged. An invalid or unknown tag (e.g. `[wip]`) is not
+recognized and is left in the description, with inference applied as usual.
+
+This is a new, higher-precedence mechanism and does **not** alter the pinned
+inference contract: an *untagged* `abandon` still infers `merged`. The tag is
+the documented escape hatch that lets the log be authoritative about an
+entry's status.
+
 ## Status inference
 
 The parser classifies each log entry into one of the three `MergeStatus`
@@ -259,7 +284,10 @@ Pass `--format json` to emit a machine-readable document instead of the
 human-readable changelog. The document is a JSON object with a `project` key
 and a `cycles` array. Each cycle carries `number`, `title`, and `entries`;
 each entry carries `description` and `status`, where `status` is a stable
-token: `merged`, `no_op`, or `not_merged`.
+token: `merged`, `no_op`, or `not_merged`. An entry additionally carries a
+`secondary_status` key (the same token) only when it has a non-`null`
+`secondary_status` (the multi-marker case); for the common single-class entry
+the key is absent, so the JSON shape for those entries is unchanged.
 
 Given the same `log.md` as the text example above, running:
 

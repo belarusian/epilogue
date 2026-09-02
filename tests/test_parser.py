@@ -897,3 +897,129 @@ def test_status_revert_base_form_recognized() -> None:
     )
     cycles = parse_log(log)
     assert [e.status for e in cycles[0].entries] == [MergeStatus.NOT_MERGED]
+
+
+# ---------------------------------------------------------------------------
+# Explicit status tag (TICKET-070): a trailing [status] tag overrides inference
+# ---------------------------------------------------------------------------
+
+
+def test_explicit_tag_overrides_conflicting_marker_word() -> None:
+    """A trailing [merged] tag overrides a NOT_MERGED marker word in the text."""
+    log = (
+        "## Cycle 1: T\n"
+        "- shipped the reverted feature [merged]\n"
+    )
+    cycles = parse_log(log)
+    entry = cycles[0].entries[0]
+    assert entry.status is MergeStatus.MERGED
+    # The tag is stripped from the description.
+    assert entry.description == "shipped the reverted feature"
+    # The tag is authoritative, so no secondary status is recorded.
+    assert entry.secondary_status is None
+
+
+def test_explicit_tag_not_merged_overrides_default() -> None:
+    """A [not-merged] tag forces NOT_MERGED even for marker-free text."""
+    log = (
+        "## Cycle 1: T\n"
+        "- parked the branch [not-merged]\n"
+    )
+    cycles = parse_log(log)
+    entry = cycles[0].entries[0]
+    assert entry.status is MergeStatus.NOT_MERGED
+    assert entry.description == "parked the branch"
+
+
+def test_explicit_tag_no_op_underscore_and_case_insensitive() -> None:
+    """[NO_OP] (underscore, uppercase) is recognized and stripped."""
+    log = (
+        "## Cycle 1: T\n"
+        "- touched nothing [NO_OP]\n"
+    )
+    cycles = parse_log(log)
+    entry = cycles[0].entries[0]
+    assert entry.status is MergeStatus.NO_OP
+    assert entry.description == "touched nothing"
+
+
+def test_explicit_tag_absent_preserves_inference() -> None:
+    """Without a tag, the pinned token-based inference is used unchanged."""
+    log = (
+        "## Cycle 1: T\n"
+        "- reverted the change\n"
+        "- shipped the feature\n"
+        "- a no-op: nothing changed\n"
+    )
+    cycles = parse_log(log)
+    assert [e.status for e in cycles[0].entries] == [
+        MergeStatus.NOT_MERGED,
+        MergeStatus.MERGED,
+        MergeStatus.NO_OP,
+    ]
+
+
+def test_explicit_tag_does_not_change_contract_a_abandon() -> None:
+    """Contract A is unchanged: an UNTAGGED 'abandon' still infers MERGED.
+
+    The tag is a new, higher-precedence mechanism; it does not alter the
+    pinned inference table. An untagged 'abandon' stays MERGED, and the same
+    line CAN be pinned to NOT_MERGED with an explicit tag.
+    """
+    log = (
+        "## Cycle 1: T\n"
+        "- abandon the renderer\n"
+        "- abandon the renderer [not-merged]\n"
+    )
+    cycles = parse_log(log)
+    assert cycles[0].entries[0].status is MergeStatus.MERGED
+    assert cycles[0].entries[0].description == "abandon the renderer"
+    assert cycles[0].entries[1].status is MergeStatus.NOT_MERGED
+    assert cycles[0].entries[1].description == "abandon the renderer"
+
+
+def test_explicit_tag_invalid_is_ignored_and_inferred() -> None:
+    """An unknown tag ([wip]) is not recognized: left in place, inferred."""
+    log = (
+        "## Cycle 1: T\n"
+        "- reverted the change [wip]\n"
+    )
+    cycles = parse_log(log)
+    entry = cycles[0].entries[0]
+    assert entry.status is MergeStatus.NOT_MERGED
+    assert entry.description == "reverted the change [wip]"
+
+
+def test_explicit_tag_not_at_end_is_not_a_tag() -> None:
+    """A bracketed status word in the middle of the line is not a tag."""
+    log = (
+        "## Cycle 1: T\n"
+        "- discussed [merged] options and shipped\n"
+    )
+    cycles = parse_log(log)
+    entry = cycles[0].entries[0]
+    # No trailing tag -> inference on the full text (no marker) -> MERGED.
+    assert entry.status is MergeStatus.MERGED
+    assert entry.description == "discussed [merged] options and shipped"
+
+
+def test_parse_status_tag_helper_contract() -> None:
+    """_parse_status_tag returns (cleaned, status) for valid/invalid input."""
+    from epilogue.parser import _parse_status_tag
+
+    assert _parse_status_tag("shipped [merged]") == (
+        "shipped",
+        MergeStatus.MERGED,
+    )
+    assert _parse_status_tag("cleaned up [no-op]") == (
+        "cleaned up",
+        MergeStatus.NO_OP,
+    )
+    assert _parse_status_tag("reverted [not_merged]") == (
+        "reverted",
+        MergeStatus.NOT_MERGED,
+    )
+    # No tag -> unchanged description, None status.
+    assert _parse_status_tag("plain text") == ("plain text", None)
+    # Unknown tag -> unchanged description, None status.
+    assert _parse_status_tag("text [wip]") == ("text [wip]", None)

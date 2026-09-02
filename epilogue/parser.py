@@ -44,6 +44,30 @@ becomes an :class:`~epilogue.model.Entry`. A leading bullet marker (``- ``
 or ``* ``) is stripped; the remainder is the entry's ``description``. Plain
 non-blank lines (no bullet) are used as-is. Blank lines are skipped.
 
+Explicit status tag (authoritative override)
+--------------------------------------------
+A log author may pin an entry's status at the source with a **trailing
+bracketed tag** at the end of the line::
+
+    - shipped the feature [merged]
+    - cleaned up the no-op [no-op]
+    - reverted the change [not-merged]
+
+The tag is case-insensitive and accepts a hyphen or underscore between the
+two words (``[no-op]`` / ``[no_op]``, ``[not-merged]`` / ``[not_merged]``).
+When present it **OVERRIDES** token-based inference and is stripped from the
+entry's ``description`` (so the rendered/JSON description no longer carries
+the tag). Because the tag is authoritative, no ``secondary_status`` is
+recorded for a tagged entry (the inference is not consulted at all). When the
+tag is absent, the entry is classified by the token-based inference below,
+unchanged. An invalid or unknown tag (e.g. ``[wip]``) is not recognized and is
+left in the description, with inference applied as usual.
+
+This is a new, higher-precedence mechanism and does **not** alter the pinned
+inference contract (contract A): an *untagged* ``abandon`` still infers
+``MERGED``. The tag is the deliberate, documented escape hatch that lets the
+log be authoritative about an entry's status (TICKET-070).
+
 Status inference (truthful, deterministic)
 ------------------------------------------
 Each entry's :class:`~epilogue.model.MergeStatus` is inferred from its
@@ -186,6 +210,23 @@ _NO_OP_MARKERS: tuple[tuple[str, ...], ...] = (
 _NOT_MERGED_PHRASE: tuple[str, ...] = ("not", "merged")
 _NOT_MERGED_PHRASE_MAX_GAP: int = 2
 
+# Explicit status tag (TICKET-070). A log author may pin an entry's status at
+# the source with a TRAILING bracketed tag at the end of the line, e.g.
+# "shipped the feature [merged]" or "reverted the change [not-merged]". The
+# tag is case-insensitive and accepts a hyphen or underscore between the two
+# words. When present it OVERRIDES token-based inference and is stripped from
+# the description; when absent, inference is used unchanged. This is a new,
+# higher-precedence mechanism and does NOT alter the pinned inference contract
+# (contract A): an untagged "abandon" still infers MERGED.
+_STATUS_TAG_RE = re.compile(r"\s*\[(merged|no[-_]op|not[-_]merged)\]\s*$", re.IGNORECASE)
+
+# Map the tag's normalized token to a MergeStatus.
+_STATUS_TAG_MAP: dict[str, MergeStatus] = {
+    "merged": MergeStatus.MERGED,
+    "no_op": MergeStatus.NO_OP,
+    "not_merged": MergeStatus.NOT_MERGED,
+}
+
 
 def _strip_bullet(line: str) -> str:
     """Return the line with a leading bullet marker (``- `` / ``* ``) removed.
@@ -198,6 +239,31 @@ def _strip_bullet(line: str) -> str:
         if stripped.startswith(prefix):
             return stripped[len(prefix):].strip()
     return stripped
+
+
+def _parse_status_tag(
+    description: str,
+) -> tuple[str, MergeStatus | None]:
+    """Split a trailing explicit status tag off a description (TICKET-070).
+
+    Args:
+        description: The bullet-stripped entry description.
+
+    Returns:
+        A ``(cleaned, status)`` pair. If the description ends with a valid
+        explicit status tag (``[merged]`` / ``[no-op]`` / ``[not-merged]``,
+        case-insensitive, hyphen or underscore accepted), the tag is removed
+        from the description (surrounding whitespace trimmed) and ``status``
+        is the corresponding :class:`MergeStatus`. Otherwise the description
+        is returned unchanged and ``status`` is ``None`` (the caller then falls
+        back to token-based inference). An invalid or unknown tag is NOT
+        recognized and is left in place.
+    """
+    match = _STATUS_TAG_RE.search(description)
+    if match is None:
+        return description, None
+    token = match.group(1).lower().replace("-", "_")
+    return description[: match.start()].rstrip(), _STATUS_TAG_MAP[token]
 
 
 def _tokenize(description: str) -> list[str]:
@@ -370,7 +436,17 @@ def parse_log(text: str) -> list[Cycle]:
         if not description:
             continue
 
-        primary, secondary = _infer_statuses(description)
+        # Explicit status tag (TICKET-070): when the line ends with a valid
+        # trailing [status] tag it OVERRIDES inference and is stripped from the
+        # description. The tag is authoritative, so no secondary status is
+        # recorded (the inference is not consulted at all). When absent, fall
+        # back to the pinned token-based inference (contract A unchanged).
+        cleaned, explicit = _parse_status_tag(description)
+        if explicit is not None:
+            primary, secondary = explicit, None
+            description = cleaned
+        else:
+            primary, secondary = _infer_statuses(description)
         current.entries.append(
             Entry(
                 description=description,
